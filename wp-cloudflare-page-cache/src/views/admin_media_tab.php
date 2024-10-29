@@ -1,5 +1,4 @@
 <?php
-namespace SPC\Views;
 
 use SPC\Constants;
 use SPC\Loader;

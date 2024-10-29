@@ -1,3 +1,22 @@
+#####   Version 5.0.5 (2024-10-29)
+
+- adds bypass cache reason header
+- adds migration functionality for the cache rule when updating the plugin
+- adds View Log button so you can view it straight on the website without downloading it
+- updates Cloudflare integration for a higher, more efficient cache hit-rate with a transform rule that ignores query parameters
+- adds capability of the static cache to ignore URL parameters and deliver cached pages
+- improves default ignored cookies list and the way cookies are checked in CloudFlare when checking if cache should be bypassed for a more efficient cache hit-rate
+- tweak cache rule to respect browser caching original TTL
+- renames the Cloudflare cache rule to warn users about editing it and use the site URL in the name
+- automatically run the cache preloader after setting up Cloudflare connection;
+- fixes HIT/MISS/DISABLED/BYPASS cache header consistency
+- fixes issue where module scripts were deferred
+- improves stability and reliability of Cloudflare API interaction
+- tweak settings defaults for new users
+- hide legacy settings for users that don't have a page rule
+- more explicit logging and error handling when something fails when using token permissions
+- improve UX for cache test modal
+
 #####   Version 5.0.4 (2024-09-16)
 
 - Fix incorrect sidebar information

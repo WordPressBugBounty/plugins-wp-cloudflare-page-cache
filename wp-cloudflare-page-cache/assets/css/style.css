@@ -733,6 +733,11 @@
     color: #f38020;
 }
 
+.swcfpc-test-response li.is-info::before {
+    content: 'ℹ️';
+    color: #6BC2DD;
+}
+
 .swcfpc-test-response li.is-error::before {
     content: '❌';
     color: #dc3232;
