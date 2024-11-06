@@ -1,3 +1,17 @@
+#####   Version 5.0.6 (2024-11-06)
+
+- Fixed checkbox values not working as expected
+- Fixed cache purge and preloader start via cronjob functionality
+- Fix programatically purging cache having the wrong authentication parameters
+- Added notices to clarify when JS and Media Optimizations work
+- Simplified the settings interface and reworked the backend UI
+- Tweak dashboard notices UI
+- Only display legacy Cloudflare worker settings when the feature is enabled
+- Removed HTML Disk Cache comment when WP_DEBUG is not defined and true
+- Upgraded wp-background-processing to latest version
+- Enable browser caching by default for new users
+- Renamed static cache status header from X-WP-CF-Super-Cache to X-WP-SPC-Disk-Cache to avoid confusion
+
 #####   Version 5.0.5 (2024-10-29)
 
 - adds bypass cache reason header

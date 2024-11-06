@@ -209,15 +209,15 @@ class Admin implements Module_Interface {
 	 */
 	public function failed_rule_update_notice() {
 		if (
-				! get_option( Constants::KEY_RULE_UPDATE_FAILED, false ) ||
-				! current_user_can( 'manage_options' )
+			! get_option( Constants::KEY_RULE_UPDATE_FAILED, false ) ||
+			! current_user_can( 'manage_options' )
 		) {
 			return;
 		}
 
 		$args = [
 			'page'       => 'wp-cloudflare-super-page-cache-index',
-			'swcfpc_tab' => 'general',
+			'active_tab' => 'general',
 		];
 
 		$nonce          = wp_create_nonce( self::RESET_RULE_ACTION_KEY );
@@ -265,7 +265,8 @@ class Admin implements Module_Interface {
 
 			<div class="actions">
 				<?php if ( ! isset( $_GET['page'] ) || 'wp-cloudflare-super-page-cache-index' !== sanitize_text_field( $_GET['page'] ) ) { ?>
-					<a href="<?php echo esc_url( $admin_page_url ); ?>" class="button button-secondary"><?php _e( 'Settings page', 'wp-cloudflare-page-cache' ); ?></a>
+					<a href="<?php echo esc_url( $admin_page_url ); ?>"
+					   class="button button-secondary"><?php _e( 'Settings page', 'wp-cloudflare-page-cache' ); ?></a>
 				<?php } else { ?>
 					<form action="<?php echo esc_url( $admin_page_url ); ?>" method="post">
 						<input type="hidden" name="nonce" value="<?php echo esc_attr( $nonce ); ?>">
@@ -280,6 +281,11 @@ class Admin implements Module_Interface {
 		<?php
 	}
 
+	/**
+	 * Reset the Cloudflare cache rule.
+	 *
+	 * @return void
+	 */
 	public function reset_cf_rule() {
 		if (
 			! current_user_can( 'manage_options' ) ||
@@ -330,5 +336,173 @@ class Admin implements Module_Interface {
 				}
 			);
 		}
+	}
+
+
+	/**
+	 * Get third party compatibilities.
+	 *
+	 * @return array
+	 */
+	public static function get_third_party_view_map() {
+		/**
+		 * @var $sw_cloudflare_pagecache \SW_CLOUDFLARE_PAGECACHE
+		 */
+		global $sw_cloudflare_pagecache;
+
+		return apply_filters(
+			'swcfpc_admin_third_party_compatibilities_view_map',
+			[
+				'woocommerce'       => is_plugin_active( 'woocommerce/woocommerce.php' ),
+				'edd'               => is_plugin_active( 'easy-digital-downloads/easy-digital-downloads.php' ),
+				'autoptimize'       => is_plugin_active( 'autoptimize/autoptimize.php' ),
+				'w3tc'              => is_plugin_active( 'w3-total-cache/w3-total-cache.php' ),
+				'litespeed_cache'   => is_plugin_active( 'litespeed-cache/litespeed-cache.php' ),
+				'hummingbird'       => is_plugin_active( 'hummingbird-performance/wp-hummingbird.php' ),
+				'wp_optimize'       => is_plugin_active( 'wp-optimize/wp-optimize.php' ),
+				'flying_press'      => is_plugin_active( 'flying-press/flying-press.php' ),
+				'wp_rocket'         => is_plugin_active( 'wp-rocket/wp-rocket.php' ),
+				'wp_asset_cleanup'  => is_plugin_active( 'wp-asset-clean-up/wpacu.php' ),
+				'nginx_helper'      => is_plugin_active( 'nginx-helper/nginx-helper.php' ),
+				'wp_performance'    => is_plugin_active( 'wp-performance/wp-performance.php' ),
+				'yasr'              => is_plugin_active( 'yet-another-stars-rating/yet-another-stars-rating.php' ) || is_plugin_active( 'yet-another-stars-rating-premium/yet-another-stars-rating.php' ),
+				'swift_performance' => is_plugin_active( 'swift-performance-lite/performance.php' ) || is_plugin_active( 'swift-performance/performance.php' ),
+				'siteground'        => $sw_cloudflare_pagecache->get_cache_controller()->is_siteground_supercacher_enabled(),
+				'wp_engine'         => $sw_cloudflare_pagecache->get_cache_controller()->can_wpengine_cache_be_purged(),
+				'spinup_wp'         => $sw_cloudflare_pagecache->get_cache_controller()->can_spinupwp_cache_be_purged(),
+				'kinsta'            => $sw_cloudflare_pagecache->get_cache_controller()->can_kinsta_cache_be_purged(),
+			]
+		);
+	}
+
+	/**
+	 * Checks if the third party tab should be loaded.
+	 *
+	 * @return bool
+	 */
+	public static function should_load_third_party_tab() {
+		foreach ( self::get_third_party_view_map() as $view_id => $enabled ) {
+			if ( $enabled ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Get the zone id list for display.
+	 *
+	 * @return array
+	 */
+	public static function get_zone_id_list_for_display() {
+		/**
+		 * @var $sw_cloudflare_pagecache \SW_CLOUDFLARE_PAGECACHE
+		 */
+		global $sw_cloudflare_pagecache;
+
+		$zone_id_list = $sw_cloudflare_pagecache->get_single_config( 'cf_zoneid_list', [] );
+
+		if ( ! is_array( $zone_id_list ) || empty( $zone_id_list ) ) {
+			return [];
+		}
+
+		return $zone_id_list;
+	}
+
+	/**
+	 * Get the cronjob URL.
+	 *
+	 * @param string $type The type of link purge|preloader
+	 *
+	 * @return string
+	 */
+	public static function get_cronjob_url( $type = 'purge' ) {
+		/**
+		 * @var $sw_cloudflare_pagecache \SW_CLOUDFLARE_PAGECACHE
+		 */
+		global $sw_cloudflare_pagecache;
+
+		$args = $type === 'purge' ? [
+			'swcfpc-purge-all' => '1',
+			'swcfpc-sec-key'   => $sw_cloudflare_pagecache->get_single_config( 'cf_purge_url_secret_key', wp_generate_password( 20, false, false ) ),
+		] : [
+			'swcfpc-preloader' => '1',
+			'swcfpc-sec-key'   => $sw_cloudflare_pagecache->get_single_config( 'cf_preloader_url_secret_key', wp_generate_password( 20, false, false ) ),
+		];
+
+		if ( (int) $sw_cloudflare_pagecache->get_single_config( Constants::SETTING_REMOVE_CACHE_BUSTER, 1 ) !== 1 ) {
+			$args[ $sw_cloudflare_pagecache->get_cache_controller()->get_cache_buster() ] = '1';
+		}
+
+		return add_query_arg( $args, site_url() );
+	}
+
+	/**
+	 * Get the third party tabs.
+	 *
+	 * @return array
+	 */
+	public static function get_admin_tabs() {
+		/**
+		 * @var $sw_cloudflare_pagecache \SW_CLOUDFLARE_PAGECACHE
+		 */
+		global $sw_cloudflare_pagecache;
+		$tabs = [
+			[
+				'id'       => 'cache',
+				'template' => 'admin_cache_tab',
+				'label'    => __( 'Cache', 'wp-cloudflare-page-cache' ),
+			],
+			[
+				'id'          => 'general',
+				'template'    => 'admin_cloudflare_tab',
+				'label'       => __( 'Cloudflare (CDN & Edge Caching)', 'wp-cloudflare-page-cache' ),
+				'tab_classes' => $sw_cloudflare_pagecache->has_cloudflare_api_zone_id() ? 'swcfpc_hide' : '',
+			],
+			[
+				'id'          => 'advanced',
+				'template'    => 'admin_advanced_tab',
+				'label'       => __( 'Advanced', 'wp-cloudflare-page-cache' ),
+				'tab_classes' => 'show_advanced',
+			],
+			[
+				'id'       => 'javascript',
+				'template' => 'admin_js_tab',
+				'label'    => __( 'Javascript', 'wp-cloudflare-page-cache' ),
+				'locked'   => ! defined( 'SPC_PRO_PATH' ),
+			],
+			[
+				'id'       => 'media',
+				'template' => 'admin_media_tab',
+				'label'    => __( 'Media', 'wp-cloudflare-page-cache' ),
+			],
+			[
+				'id'       => 'thirdparty',
+				'template' => 'admin_third_party_tab',
+				'label'    => __( 'Third Party', 'wp-cloudflare-page-cache' ),
+				'enabled'  => self::should_load_third_party_tab(),
+			],
+			[
+				'id'       => 'faq',
+				'template' => 'admin_faq_tab',
+				'label'    => __( 'FAQ', 'wp-cloudflare-page-cache' ),
+			],
+			[
+				'id'       => 'image_optimization',
+				'template' => 'optimole',
+				'label'    => __( 'Image Optimization', 'wp-cloudflare-page-cache' ),
+				'enabled'  => ! defined( 'OPTML_VERSION' ),
+			],
+		];
+
+		$tabs = apply_filters( 'swcfpc_admin_tabs', $tabs );
+
+		return array_filter(
+			$tabs,
+			function( $tab ) {
+				return ! isset( $tab['enabled'] ) || $tab['enabled'] === true;
+			} 
+		);
 	}
 }

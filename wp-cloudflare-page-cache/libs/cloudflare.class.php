@@ -1,6 +1,7 @@
 <?php
 
 use SPC\Constants;
+use SPC\Modules\Settings_Manager;
 use SPC\Services\Cloudflare_Client;
 
 defined( 'ABSPATH' ) || die( 'Cheatin&#8217; uh?' );
@@ -55,10 +56,9 @@ class SWCFPC_Cloudflare {
 	public function is_enabled() {
 		return (
 			$this->main_instance->has_cloudflare_api_zone_id() &&
-			! empty( $this->email ) &&
 			(
-				! empty( $this->api_token ) ||
-				! empty( $this->api_key )
+				! empty( $this->email ) && ! empty( $this->api_key ) ||
+				! empty( $this->api_token )
 			)
 		);
 	}
@@ -127,6 +127,10 @@ class SWCFPC_Cloudflare {
 		$this->api_token_domain = $api_token_domain;
 	}
 
+	public function get_api_token_domain() {
+		return $this->api_token_domain;
+	}
+
 	/**
 	 * Enable the worker mode locally in this class.
 	 *
@@ -144,7 +148,7 @@ class SWCFPC_Cloudflare {
 	 * @return array|false
 	 */
 	public function get_zone_id_list( &$error ) {
-		return $this->client->get_zone_id_list( $error );
+		return $this->client->get_zone_id_list( $error, $this->get_api_token_domain() );
 	}
 
 	/**
@@ -276,10 +280,11 @@ class SWCFPC_Cloudflare {
 	 * Disable page cache.
 	 *
 	 * @param string $error The error message.
+	 * @param bool $disable_cache If true, it will disable the cache.
 	 *
 	 * @return bool
 	 */
-	public function disable_page_cache( &$error = '' ) {
+	public function disable_page_cache( &$error = '', $disable_cache = true ) {
 		$logger = $this->main_instance->get_logger();
 
 		// Reset old browser cache TTL
@@ -287,7 +292,7 @@ class SWCFPC_Cloudflare {
 			$this->change_browser_cache_ttl( $this->main_instance->get_single_config( 'cf_old_bc_ttl', 0 ), $error );
 		}
 
-		if ( $this->worker_mode == true ) {
+		if ( $this->worker_mode ) {
 
 			$worker_route_ids = $this->worker_route_get_list( $error );
 
@@ -339,7 +344,9 @@ class SWCFPC_Cloudflare {
 		$this->main_instance->get_cache_controller()->reset_htaccess();
 
 		$this->main_instance->set_single_config( 'cf_woker_route_id', '' );
-		$this->main_instance->set_single_config( 'cf_cache_enabled', 0 );
+		if ( $disable_cache ) {
+			$this->main_instance->set_single_config( 'cf_cache_enabled', 0 );
+		}
 		$this->main_instance->update_config();
 
 		return true;
@@ -617,6 +624,7 @@ class SWCFPC_Cloudflare {
 
 		if ( ! $this->is_enabled() || ! $this->has_cache_rule() ) {
 			$logger->add_log( 'cloudflare::update_cache_rule_if_diff', 'Cloudflare API is not enabled or cache rule is not set. Enabled: ' . $this->is_enabled() . ' Rule set: ' . $this->has_cache_rule() );
+
 			return;
 		}
 
@@ -641,5 +649,29 @@ class SWCFPC_Cloudflare {
 		}
 
 		$this->sync_cache_rule( $error );
+	}
+
+	/**
+	 * Disconnect from Cloudflare.
+	 *
+	 * @param string $error The error message.
+	 *
+	 * @return void
+	 */
+	public function disconnect( &$error = '' ) {
+		$logger = $this->main_instance->get_logger();
+
+		$logger->add_log( 'cloudflare::disconnect', 'Disconnecting from Cloudflare.' );
+		$this->disable_page_cache( $error, false );
+
+		$to_reset = [ 'cf_zoneid', 'cf_zoneid_list', 'cf_email', 'cf_apitoken', 'cf_apikey', 'cf_token' ];
+
+		foreach ( $to_reset as $key ) {
+			$logger->add_log( 'cloudflare::disconnect', "Resetting $key to default value." );
+			$this->main_instance->set_single_config( $key, Settings_Manager::get_default_for_field( $key, $key === 'cf_zoneid_list' ? [] : '' ) );
+		}
+
+		$this->main_instance->update_config();
+		$logger->add_log( 'cloudflare::disconnect', 'Disconnected from Cloudflare.' );
 	}
 }

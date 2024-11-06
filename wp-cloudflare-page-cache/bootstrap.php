@@ -42,7 +42,7 @@ if ( ! class_exists( 'SW_CLOUDFLARE_PAGECACHE' ) ) {
 
 		private $config  = false;
 		private $modules = [];
-		private $version = '5.0.5';
+		private $version = '5.0.6';
 
 		public const REDIRECT_KEY = 'swcfpc_dashboard_redirect';
 
@@ -123,7 +123,7 @@ if ( ! class_exists( 'SW_CLOUDFLARE_PAGECACHE' ) ) {
 
 			$this->modules = apply_filters( 'swcfpc_include_libs_lately', $this->modules );
 
-			// Inizializzo qui la classe del preloader in quanto questo metodo viene richiamato all'evento plugin_loaded. Dopodiche' posso stanziare l'oggetto anche in chiamate Ajax
+			// Initialize the preloader class here as this method is called on the plugin_loaded event. After that, I can instantiate the object even in Ajax calls
 			new SWCFPC_Preloader_Process( $this );
 
 			$this->enable_wp_cli_support();
@@ -189,25 +189,24 @@ if ( ! class_exists( 'SW_CLOUDFLARE_PAGECACHE' ) ) {
 			$config['cf_auto_purge_on_upgrader_process_complete'] = 0;
 
 			// Pages
-			$config['cf_bypass_front_page']        = 0;
-			$config['cf_bypass_pages']             = 0;
-			$config['cf_bypass_home']              = 0;
-			$config['cf_bypass_archives']          = 0;
-			$config['cf_bypass_tags']              = 0;
-			$config['cf_bypass_category']          = 0;
-			$config['cf_bypass_author_pages']      = 0;
-			$config['cf_bypass_single_post']       = 0;
-			$config['cf_bypass_feeds']             = 1;
-			$config['cf_bypass_search_pages']      = 1;
-			$config['cf_bypass_404']               = 1;
-			$config['cf_bypass_logged_in']         = 1;
-			$config['cf_bypass_amp']               = 0;
-			$config['cf_bypass_file_robots']       = 1;
-			$config['cf_bypass_sitemap']           = 1;
-			$config['cf_bypass_ajax']              = 1;
-			$config['cf_cache_control_htaccess']   = 0;
-			$config['cf_browser_caching_htaccess'] = 0;
-			$config['cf_auth_mode']                = SWCFPC_AUTH_MODE_API_KEY;
+			$config['cf_bypass_front_page']      = 0;
+			$config['cf_bypass_pages']           = 0;
+			$config['cf_bypass_home']            = 0;
+			$config['cf_bypass_archives']        = 0;
+			$config['cf_bypass_tags']            = 0;
+			$config['cf_bypass_category']        = 0;
+			$config['cf_bypass_author_pages']    = 0;
+			$config['cf_bypass_single_post']     = 0;
+			$config['cf_bypass_feeds']           = 1;
+			$config['cf_bypass_search_pages']    = 1;
+			$config['cf_bypass_404']             = 1;
+			$config['cf_bypass_logged_in']       = 1;
+			$config['cf_bypass_amp']             = 0;
+			$config['cf_bypass_file_robots']     = 1;
+			$config['cf_bypass_sitemap']         = 1;
+			$config['cf_bypass_ajax']            = 1;
+			$config['cf_cache_control_htaccess'] = 0;
+			$config['cf_auth_mode']              = SWCFPC_AUTH_MODE_API_KEY;
 			// $config['cf_bypass_post']                   = 0;
 			$config['cf_bypass_query_var']    = 0;
 			$config['cf_bypass_wp_json_rest'] = 0;
@@ -601,9 +600,10 @@ if ( ! class_exists( 'SW_CLOUDFLARE_PAGECACHE' ) ) {
 				add_action(
 					'shutdown',
 					function () {
+						delete_option( 'cf_will_run_free_to_pro_migrations' );
+						update_option( 'swcfpc_version', $this->version );
 						$migrations = new \SPC\Migrator( $this );
 						$migrations->run_update_migrations();
-						delete_option( 'cf_will_run_free_to_pro_migrations' );
 					}
 				);
 			}

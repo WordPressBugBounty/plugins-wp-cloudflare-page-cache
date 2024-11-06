@@ -301,11 +301,9 @@ class SWCFPC_Backend {
 
 			// Force refresh on Cloudflare api class
 			if (
-				isset( $_POST['swcfpc_cf_email'] ) && strlen( trim( $_POST['swcfpc_cf_email'] ) ) > 0 &&
-				(
-					isset( $_POST['swcfpc_cf_apikey'] ) && strlen( trim( $_POST['swcfpc_cf_apikey'] ) ) > 0 ||
-					isset( $_POST['swcfpc_cf_apitoken'] ) && strlen( trim( $_POST['swcfpc_cf_apitoken'] ) ) > 0
-				)
+				isset( $_POST['swcfpc_cf_apitoken'] ) && strlen( trim( $_POST['swcfpc_cf_apitoken'] ) ) > 0 ||
+				( isset( $_POST['swcfpc_cf_email'] ) && strlen( trim( $_POST['swcfpc_cf_email'] ) ) > 0 && isset( $_POST['swcfpc_cf_apikey'] ) &&
+				strlen( trim( $_POST['swcfpc_cf_apikey'] ) ) > 0 )
 			) {
 				$this->main_instance->get_cloudflare_handler()->set_auth_mode( (int) $_POST['swcfpc_cf_auth_mode'] );
 				$this->main_instance->get_cloudflare_handler()->set_api_key( sanitize_text_field( $_POST['swcfpc_cf_apikey'] ) );
@@ -320,7 +318,7 @@ class SWCFPC_Backend {
 				$this->main_instance->set_single_config( 'log_enabled', (int) $_POST['swcfpc_log_enabled'] );
 
 				// Log max file size
-				$this->main_instance->set_single_config( 'log_max_file_size', (int) $_POST['swcfpc_log_max_file_size'] );
+				$this->main_instance->set_single_config( 'log_+max_file_size', (int) $_POST['swcfpc_log_max_file_size'] );
 
 				// Log verbosity
 				$this->main_instance->set_single_config( 'log_verbosity', sanitize_text_field( $_POST['swcfpc_log_verbosity'] ) );
@@ -364,7 +362,7 @@ class SWCFPC_Backend {
 
 					if ( (int) $_POST['swcfpc_cf_woker_enabled'] > 0 ) {
 						$this->main_instance->get_cloudflare_handler()->enable_worker_mode();
-					}               
+					}
 				}
 
 				// Cookies to exclude from cache in worker mode
@@ -400,16 +398,16 @@ class SWCFPC_Backend {
 			// Salvataggio immediato per consentire di applicare subito i settaggi di connessione
 			$this->main_instance->update_config();
 
-			if ( isset( $_POST['swcfpc_post_per_page'] ) && (int) $_POST['swcfpc_post_per_page'] >= 0 ) {
-				$this->main_instance->set_single_config( 'cf_post_per_page', (int) $_POST['swcfpc_post_per_page'] );
+			if ( isset( $_POST['swcfpc_cf_post_per_page'] ) && (int) $_POST['swcfpc_cf_post_per_page'] >= 0 ) {
+				$this->main_instance->set_single_config( 'cf_post_per_page', (int) $_POST['swcfpc_cf_post_per_page'] );
 			}
 
-			if ( isset( $_POST['swcfpc_maxage'] ) && (int) $_POST['swcfpc_maxage'] >= 0 ) {
-				$this->main_instance->set_single_config( 'cf_maxage', (int) $_POST['swcfpc_maxage'] );
+			if ( isset( $_POST['swcfpc_cf_maxage'] ) && (int) $_POST['swcfpc_cf_maxage'] >= 0 ) {
+				$this->main_instance->set_single_config( 'cf_maxage', (int) $_POST['swcfpc_cf_maxage'] );
 			}
 
-			if ( isset( $_POST['swcfpc_browser_maxage'] ) && (int) $_POST['swcfpc_browser_maxage'] >= 0 ) {
-				$this->main_instance->set_single_config( 'cf_browser_maxage', (int) $_POST['swcfpc_browser_maxage'] );
+			if ( isset( $_POST['swcfpc_cf_browser_maxage'] ) && (int) $_POST['swcfpc_cf_browser_maxage'] >= 0 ) {
+				$this->main_instance->set_single_config( 'cf_browser_maxage', (int) $_POST['swcfpc_cf_browser_maxage'] );
 			}
 
 			if ( isset( $_POST['swcfpc_cf_zoneid'] ) ) {
@@ -877,10 +875,6 @@ class SWCFPC_Backend {
 				$this->main_instance->set_single_config( 'cf_cache_control_htaccess', (int) $_POST['swcfpc_cf_cache_control_htaccess'] );
 			}
 
-			if ( isset( $_POST['swcfpc_cf_browser_caching_htaccess'] ) ) {
-				$this->main_instance->set_single_config( 'cf_browser_caching_htaccess', (int) $_POST['swcfpc_cf_browser_caching_htaccess'] );
-			}
-
 			// Purge HTML pages only
 			if ( isset( $_POST['swcfpc_cf_purge_only_html'] ) ) {
 				$this->main_instance->set_single_config( 'cf_purge_only_html', (int) $_POST['swcfpc_cf_purge_only_html'] );
@@ -1107,56 +1101,6 @@ class SWCFPC_Backend {
 
 			$cloudflare->update_cache_rule_if_diff();
 		}
-
-
-		$zone_id_list = $this->main_instance->get_single_config( 'cf_zoneid_list', [] );
-
-		if ( is_array( $zone_id_list ) && count( $zone_id_list ) > 0 ) {
-
-			// If the domain name is found in the zone list, I will show it only instead of full domains list
-			$current_domain = str_replace( [ '/', 'http:', 'https:', 'www.' ], '', site_url() );
-
-			foreach ( $zone_id_list as $zone_id_name => $zone_id ) {
-
-				if ( $zone_id_name == $current_domain ) {
-					$domain_found   = true;
-					$domain_zone_id = $zone_id;
-					break;
-				}           
-			}       
-		} else {
-			$zone_id_list = [];
-		}
-
-		$cornjob_url_query_arg = [
-			$this->main_instance->get_cache_controller()->get_cache_buster() => '1',
-			'swcfpc-purge-all' => '1',
-			'swcfpc-sec-key'   => $this->main_instance->get_single_config( 'cf_purge_url_secret_key', wp_generate_password( 20, false, false ) ),
-		];
-
-		if ( $this->main_instance->get_single_config( Constants::SETTING_REMOVE_CACHE_BUSTER, 1 ) > 0 ) {
-			$cornjob_url_query_arg = [
-				'swcfpc-purge-all' => '1',
-				'swcfpc-sec-key'   => $this->main_instance->get_single_config( 'cf_purge_url_secret_key', wp_generate_password( 20, false, false ) ),
-			];
-		}
-
-		$cronjob_url = add_query_arg( $cornjob_url_query_arg, site_url() );
-
-		$preloader_cronjob_url_query_arg = [
-			$this->main_instance->get_cache_controller()->get_cache_buster() => '1',
-			'swcfpc-preloader' => '1',
-			'swcfpc-sec-key'   => $this->main_instance->get_single_config( 'cf_preloader_url_secret_key', wp_generate_password( 20, false, false ) ),
-		];
-
-		if ( $this->main_instance->get_single_config( Constants::SETTING_REMOVE_CACHE_BUSTER, 1 ) > 0 ) {
-			$preloader_cronjob_url_query_arg = [
-				'swcfpc-preloader' => '1',
-				'swcfpc-sec-key'   => $this->main_instance->get_single_config( 'cf_preloader_url_secret_key', wp_generate_password( 20, false, false ) ),
-			];
-		}
-
-		$preloader_cronjob_url = add_query_arg( $preloader_cronjob_url_query_arg, site_url() );
 
 		$this->load_survey();
 

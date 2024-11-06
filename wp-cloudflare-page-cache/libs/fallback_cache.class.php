@@ -349,7 +349,9 @@ class SWCFPC_Fallback_Cache {
 
 		$body = wp_remote_retrieve_body( $response );
 
-		$body .= "\n<!-- Page retrieved from Super Page Cache fallback cache via cURL - page generated @ " . date( 'Y-m-d H:i:s' ) . ' - fallback cache expiration @ ' . ( 0 < $ttl ? date( 'Y-m-d H:i:s', $ttl ) : 'never expires' ) . " - cache key {$cache_key} -->";
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			$body .= "\n<!-- Page retrieved from Super Page Cache fallback cache via cURL - page generated @ " . date( 'Y-m-d H:i:s' ) . ' - fallback cache expiration @ ' . ( 0 < $ttl ? date( 'Y-m-d H:i:s', $ttl ) : 'never expires' ) . " - cache key {$cache_key} -->";
+		}
 
 		// Provide a filter to modify the HTML before it is cached
 		$body = apply_filters( 'swcfpc_curl_fallback_cache_html', $body );
@@ -635,7 +637,7 @@ class SWCFPC_Fallback_Cache {
 			header_remove( 'Expires' );
 			header_remove( 'Cache-Control' );
 			header( 'Cache-Control: ' . $this->modules['cache_controller']->get_cache_control_value() );
-			header( 'X-WP-CF-Super-Cache: HIT' );
+			header( 'X-WP-SPC-Disk-Cache: HIT' );
 			header( 'X-WP-CF-Super-Cache-Active: 1' );
 			header( 'X-WP-CF-Super-Cache-Cache-Control: ' . $this->modules['cache_controller']->get_cache_control_value() );
 			header( 'X-WP-CF-Super-Cache-Cookies-Bypass: ' . $this->modules['cache_controller']->get_cookies_to_bypass_in_worker_mode() );

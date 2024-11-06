@@ -57,6 +57,10 @@ class Migrator {
 			$this->migrate_to_5_0_5();
 		}
 
+		if ( version_compare( $this->previous_version, '5.0.6', '<' ) ) {
+			$this->migrate_to_5_0_6();
+		}
+
 		do_action( 'swcfpc_after_plugin_upgrader_run' );
 	}
 
@@ -75,6 +79,33 @@ class Migrator {
 		}
 
 		$this->logger->add_log( 'upgrader::update_cache_rule', 'Cache rule updated.' );
+	}
+
+	/**
+	 * Migrate to 5.0.6 from previous versions.
+	 *
+	 * Updates the excluded cookies list with additional ones.
+	 *
+	 * @return void
+	 */
+	private function migrate_to_5_0_6() {
+		$this->plugin->get_logger()->add_log( 'upgrader::migrate_to_5_0_6', 'Migrating to 5.0.6' );
+
+		$setting_data = $this->plugin->get_single_config( Constants::SETTING_EXCLUDED_COOKIES, Constants::DEFAULT_EXCLUDED_COOKIES );
+
+		if ( ! is_array( $setting_data ) ) {
+			return;
+		}
+
+		$setting_data = array_filter(
+			$setting_data,
+			function( $cookie ) {
+				return ! in_array( $cookie, [ 'wp-', '^wp-' ], true );
+			} 
+		);
+
+		$this->plugin->set_single_config( Constants::SETTING_EXCLUDED_COOKIES, $setting_data );
+		$this->plugin->update_config();
 	}
 
 	/**

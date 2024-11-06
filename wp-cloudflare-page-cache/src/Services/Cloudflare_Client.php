@@ -272,15 +272,16 @@ class Cloudflare_Client extends Cloudflare_Rule {
 	 *
 	 * @return array | false
 	 */
-	public function get_zone_id_list( &$error = '' ) {
+	public function get_zone_id_list( &$error = '', $forced_api_domain = '' ) {
 		$list         = [];
 		$per_page     = 50;
 		$current_page = 1;
 		$pagination   = false;
 		$args         = $this->get_api_auth_args();
 
+		$api_token_domain = ! empty( $forced_api_domain ) ? $forced_api_domain : $this->plugin->get_second_level_domain();
+
 		do {
-			$api_token_domain = $this->plugin->get_second_level_domain();
 
 			if ( $this->is_token_auth() && ! empty( $api_token_domain ) ) {
 				$url = sprintf( 'https://api.cloudflare.com/client/v4/zones?name=%s', $api_token_domain );
@@ -383,7 +384,7 @@ class Cloudflare_Client extends Cloudflare_Rule {
 	 * @return true
 	 */
 	public function purge_cache_urls_async( $urls ) {
-		$args = $this->get_api_auth_args();
+		$args = $this->get_api_auth_args( true );
 
 		$chunks     = array_chunk( $urls, 30 );
 		$multi_curl = curl_multi_init();

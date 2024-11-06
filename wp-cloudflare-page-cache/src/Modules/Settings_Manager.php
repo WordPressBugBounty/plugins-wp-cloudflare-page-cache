@@ -7,77 +7,85 @@ use SPC\Utils\Sanitization;
 
 class Settings_Manager implements Module_Interface {
 	private const BASE_FIELDS         = [
-		Constants::SETTING_EXCLUDED_COOKIES       => [
+		Constants::SETTING_EXCLUDED_COOKIES            => [
 			'type'       => 'textarea',
 			'bust_cache' => true,
 			'sync_rules' => true,
 			'default'    => Constants::DEFAULT_EXCLUDED_COOKIES,
 		],
-		Constants::SETTING_EXCLUDED_URLS          => [
+		Constants::SETTING_EXCLUDED_URLS               => [
 			'type'              => 'textarea',
 			'bust_cache'        => true,
 			'sync_rules'        => true,
 			'sanitize_callback' => 'SPC\Utils\Sanitization::sanitize_excluded_urls',
 			'default'           => Constants::DEFAULT_EXCLUDED_URLS,
 		],
-		Constants::SETTING_NATIVE_LAZY_LOADING    => [
+		Constants::SETTING_NATIVE_LAZY_LOADING         => [
 			'type'       => 'bool',
 			'bust_cache' => true,
 			'default'    => 1,
 		],
-		Constants::SETTING_LAZY_LOADING           => [
+		Constants::SETTING_LAZY_LOADING                => [
 			'type'       => 'bool',
 			'bust_cache' => true,
 			'default'    => 0,
 		],
-		Constants::SETTING_LAZY_LOAD_VIDEO_IFRAME => [
+		Constants::SETTING_LAZY_LOAD_VIDEO_IFRAME      => [
 			'type'       => 'bool',
 			'bust_cache' => true,
 			'default'    => 0,
 		],
-		Constants::SETTING_LAZY_LOAD_SKIP_IMAGES  => [
+		Constants::SETTING_LAZY_LOAD_SKIP_IMAGES       => [
 			'type'       => 'int',
 			'bust_cache' => true,
 			'default'    => 0,
 		],
-		Constants::SETTING_LAZY_EXCLUDED          => [
+		Constants::SETTING_LAZY_EXCLUDED               => [
 			'type'       => 'textarea',
 			'bust_cache' => true,
 			'default'    => [],
 		],
-		Constants::SETTING_LAZY_LOAD_BG           => [
+		Constants::SETTING_LAZY_LOAD_BG                => [
 			'type'       => 'bool',
 			'bust_cache' => true,
 			'default'    => 0,
 		],
-		Constants::SETTING_LAZY_LOAD_BG_SELECTORS => [
+		Constants::SETTING_LAZY_LOAD_BG_SELECTORS      => [
 			'type'       => 'textarea',
 			'bust_cache' => true,
 			'default'    => [],
 		],
-		Constants::SETTING_AUTO_PURGE             => [
+		Constants::SETTING_AUTO_PURGE                  => [
 			'type'    => 'bool',
 			'default' => 1,
 		],
-		Constants::SETTING_AUTO_PURGE_WHOLE       => [
+		Constants::SETTING_AUTO_PURGE_WHOLE            => [
 			'type'    => 'bool',
 			'default' => 0,
 		],
-		Constants::SETTING_PURGE_ON_COMMENT       => [
+		Constants::SETTING_PURGE_ON_COMMENT            => [
 			'type'    => 'bool',
 			'default' => 1,
 		],
-		Constants::SETTING_PRELOAD_SITEMAPS_URLS  => [
+		Constants::SETTING_PRELOAD_SITEMAPS_URLS       => [
 			'type'              => 'textarea',
 			'sanitize_callback' => 'SPC\Utils\Sanitization::sanitize_preloaded_sitemap_urls',
 			'default'           => Constants::DEFAULT_PRELOADED_SITEMAPS_URLS,
 		],
-		Constants::SETTING_PREFETCH_ON_HOVER      => [
+		Constants::SETTING_PREFETCH_ON_HOVER           => [
 			'type'       => 'bool',
 			'bust_cache' => true,
 			'default'    => 1,
 		],
-		Constants::SETTING_REMOVE_CACHE_BUSTER    => [
+		Constants::SETTING_REMOVE_CACHE_BUSTER         => [
+			'type'    => 'bool',
+			'default' => 1,
+		],
+		Constants::SETTING_SHOW_ADVANCED               => [
+			'type'    => 'bool',
+			'default' => 0,
+		],
+		Constants::SETTING_BROWSER_CACHE_STATIC_ASSETS => [
 			'type'    => 'bool',
 			'default' => 1,
 		],
@@ -213,12 +221,22 @@ class Settings_Manager implements Module_Interface {
 	 * @return mixed
 	 */
 	public static function get_default_for_field( $field, $fallback ) {
+		/**
+		 * @var \SW_CLOUDFLARE_PAGECACHE $sw_cloudflare_pagecache
+		 */
+		global $sw_cloudflare_pagecache;
 		$fields = self::BASE_FIELDS;
 
-		if ( ! isset( $fields[ $field ], $fields[ $field ]['default'] ) ) {
-			return $fallback;
+		if ( isset( $fields[ $field ], $fields[ $field ]['default'] ) ) {
+			return $fields[ $field ]['default'];
 		}
 
-		return $fields[ $field ]['default'];
+		$legacy_config = $sw_cloudflare_pagecache->get_default_config();
+
+		if ( is_array( $legacy_config ) && isset( $legacy_config[ $field ] ) ) {
+			return $legacy_config[ $field ];
+		}
+
+		return $fallback;
 	}
 }
