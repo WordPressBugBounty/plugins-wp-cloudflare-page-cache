@@ -55,13 +55,7 @@ $switch_counter = 10000;
 	</div>
 	<div class="right_column">
 		<?php
-		render_number_field(
-			'cf_fallback_cache_ttl',
-			[
-				'min' => 0,
-				'max' => PHP_INT_MAX,
-			]
-		);
+		render_number_field( 'cf_fallback_cache_ttl' );
 		render_description( __( 'Enter a value in seconds.', 'wp-cloudflare-page-cache' ) );
 		?>
 	</div>
@@ -303,14 +297,7 @@ render_description_section( __( 'This option is useful if you want to use Super 
 	</div>
 	<div class="right_column">
 		<?php
-		render_number_field(
-			'cf_maxage',
-			31536000,
-			[
-				'min' => 0,
-				'max' => 31536000,
-			]
-		);
+		render_number_field( 'cf_maxage', 31536000 );
 		?>
 	</div>
 	<div class="clear"></div>
@@ -324,13 +311,7 @@ render_description_section( __( 'This option is useful if you want to use Super 
 	</div>
 	<div class="right_column">
 		<?php
-		render_number_field(
-			'cf_browser_maxage',
-			[
-				'min' => 0,
-				'max' => PHP_INT_MAX,
-			]
-		);
+		render_number_field( 'cf_browser_maxage' );
 		?>
 	</div>
 	<div class="clear"></div>
@@ -586,14 +567,7 @@ render_description_section( __( 'This option is useful if you want to use Super 
 	<div class="right_column">
 		<div class="right_column">
 			<?php
-			render_number_field(
-				'cf_varnish_port',
-				6081,
-				[
-					'min' => 1,
-					'max' => 65535,
-				]
-			);
+			render_number_field( 'cf_varnish_port', 6081 );
 			?>
 		</div>
 	</div>
@@ -718,7 +692,7 @@ render_description_section( __( 'This option is useful if you want to use Super 
 		<?php render_description( __( 'Automatically reset the log file when it exceeded the max file size. Set 0 to never reset it.', 'wp-cloudflare-page-cache' ) ); ?>
 	</div>
 	<div class="right_column">
-		<?php render_number_field( 'log_max_file_size', 2, [ 'min' => 0 ] ); ?>
+		<?php render_number_field( 'log_max_file_size', 2 ); ?>
 	</div>
 	<div class="clear"></div>
 </div>

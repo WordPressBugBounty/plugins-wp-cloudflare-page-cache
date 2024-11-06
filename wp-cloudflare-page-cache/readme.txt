@@ -167,6 +167,13 @@ First check the questions mentioned in the FAQ tab inside the plugin settings pa
 
 == Changelog ==
 
+#####   Version 5.0.7 (2024-11-06)
+
+fix: number inputs in the dashboard settings having a maximum limit of 100 by default
+
+
+
+
 #####   Version 5.0.6 (2024-11-06)
 
 - Fixed checkbox values not working as expected

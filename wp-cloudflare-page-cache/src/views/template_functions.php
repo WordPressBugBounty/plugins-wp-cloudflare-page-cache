@@ -184,7 +184,6 @@ function render_number_field( $setting_id, $fallback_default = 0, $input_attrs =
 		'type'  => 'number',
 		'step'  => 1,
 		'min'   => 0,
-		'max'   => 100,
 		'name'  => "swcfpc_{$setting_id}",
 		'value' => (int) $sw_cloudflare_pagecache->get_single_config( $setting_id, Settings_Manager::get_default_for_field( $setting_id, $fallback_default ) ),
 	];
