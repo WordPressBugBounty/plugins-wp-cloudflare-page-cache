@@ -62,7 +62,6 @@ if ( empty( $zone_id_list ) ) {
 			'',
 			[
 				'autocomplete' => 'off',
-				'type'         => 'email',
 			]
 		);
 		?>

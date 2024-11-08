@@ -1,3 +1,8 @@
+#####   Version 5.0.8 (2024-11-08)
+
+- Fixed issue where Automatically preload purged pages option cannot be changed
+- Fixed issue where settings could not be saved if on a previous version an invalid email was already saved
+
 #####   Version 5.0.7 (2024-11-06)
 
 fix: number inputs in the dashboard settings having a maximum limit of 100 by default

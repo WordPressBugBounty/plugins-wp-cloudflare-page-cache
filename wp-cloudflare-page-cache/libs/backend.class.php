@@ -281,6 +281,8 @@ class SWCFPC_Backend {
 		$domain_found   = false;
 		$domain_zone_id = '';
 		$wizard_active  = true;
+		
+		$has_pro = defined( 'SPC_PRO_PATH' );
 
 		if ( $this->main_instance->has_cloudflare_api_zone_id() && $this->main_instance->get_cache_controller()->is_cache_enabled() ) {
 			$wizard_active = false;
@@ -1033,8 +1035,8 @@ class SWCFPC_Backend {
 			}
 
 			// Automatically start preloader on page purge
-			if ( isset( $_POST['swcfpc_cf_cache_preloader_start_on_purge'] ) ) {
-				$this->main_instance->set_single_config( 'cf_preloader_start_on_purge', (int) $_POST['swcfpc_cf_cache_preloader_start_on_purge'] );
+			if ( isset( $_POST['swcfpc_cf_preloader_start_on_purge'] ) ) {
+				$this->main_instance->set_single_config( 'cf_preloader_start_on_purge', (int) $_POST['swcfpc_cf_preloader_start_on_purge'] );
 			}
 
 			// Preloading logic
@@ -1103,6 +1105,10 @@ class SWCFPC_Backend {
 		}
 
 		$this->load_survey();
+
+		if ( ! $has_pro ) {
+			do_action( 'themeisle_sdk_load_banner', 'spc' );
+		}
 
 		require_once SWCFPC_PLUGIN_PATH . 'libs/views/settings.php';
 

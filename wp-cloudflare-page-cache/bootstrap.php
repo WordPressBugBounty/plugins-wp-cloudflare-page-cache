@@ -42,7 +42,7 @@ if ( ! class_exists( 'SW_CLOUDFLARE_PAGECACHE' ) ) {
 
 		private $config  = false;
 		private $modules = [];
-		private $version = '5.0.7';
+		private $version = '5.0.8';
 
 		public const REDIRECT_KEY = 'swcfpc_dashboard_redirect';
 

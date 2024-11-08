@@ -20,6 +20,7 @@ $tabs                        = Admin::get_admin_tabs();
 
 <div class="wrap">
 
+	<div id="tsdk_banner" class="swcfpc-banner"></div>
 	<div id="swcfpc_main_content" class="<?php echo defined( 'SPC_PRO_PATH' ) ? '' : 'width_sidebar'; ?>"
 		 data-cache_enabled="<?php echo $this->main_instance->get_single_config( 'cf_cache_enabled', 0 ); ?>">
 

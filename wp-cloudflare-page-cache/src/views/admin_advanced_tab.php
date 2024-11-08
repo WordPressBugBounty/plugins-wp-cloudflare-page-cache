@@ -427,7 +427,7 @@ render_description_section( __( 'This option is useful if you want to use Super 
 		<label><?php _e( 'Automatically preload the pages you have purged from cache.', 'wp-cloudflare-page-cache' ); ?></label>
 	</div>
 	<div class="right_column">
-		<?php render_switch( 'cf_preload_after_purge' ); ?>
+		<?php render_switch( 'cf_preloader_start_on_purge' ); ?>
 	</div>
 	<div class="clear"></div>
 </div>
