@@ -318,56 +318,55 @@ render_description_section( __( 'This option is useful if you want to use Super 
 </div>
 
 
-<!-- Hide cache behavior for new users -->
-<?php if ( ! empty( $sw_cloudflare_pagecache->get_single_config( 'cf_page_rule_id', '' ) ) ) { ?>
-	<?php render_header( __( 'Cloudflare Cache behavior', 'wp-cloudflare-page-cache' ) ); ?>
-	<!-- Automatically purge the Cloudflare's cache -->
-	<div class="main_section">
-		<div class="left_column">
-			<label><?php _e( 'Automatically purge the Cloudflare\'s cache when something changes on the website', 'wp-cloudflare-page-cache' ); ?></label>
-			<?php
-			render_description( sprintf( '<strong>%s</strong>', __( 'Example: update/publish a post/page', 'wp-cloudflare-page-cache' ) ), false, false, true );
-			/* translators: %s: link to Nginx instructions page (on this page) */
-			render_description(
-				sprintf(
-					__( 'It is recommended to add the browser caching rules that you find %s.', 'wp-cloudflare-page-cache' ),
-					'<a href="' . $nginx_instructions_page_url . '" target="_blank">' . __( 'on this page', 'wp-cloudflare-page-cache' ) . '</a>'
-				)
-			);
-			?>
-		</div>
-		<div class="right_column">
-			<?php
-			render_checkbox( Constants::SETTING_AUTO_PURGE, __( 'Purge cache for related pages only', 'wp-cloudflare-page-cache' ), true );
-			render_checkbox( Constants::SETTING_AUTO_PURGE_WHOLE, __( 'Purge whole cache', 'wp-cloudflare-page-cache' ) );
-			?>
-		</div>
-		<div class="clear"></div>
-	</div>
+<?php $hide = empty( $sw_cloudflare_pagecache->get_single_config( 'cf_page_rule_id', '' ) ); ?>
 
-	<!-- Automatically purge the Page cache when Cloudflare cache is purged -->
-	<div class="main_section fallbackcache">
-		<div class="left_column">
-			<label><?php _e( 'Automatically purge the Page cache when Cloudflare cache is purged', 'wp-cloudflare-page-cache' ); ?></label>
-		</div>
-		<div class="right_column">
-			<?php render_switch( 'cf_fallback_cache_auto_purge' ); ?>
-		</div>
-		<div class="clear"></div>
+<?php render_header( __( 'Cloudflare Cache behavior', 'wp-cloudflare-page-cache' ), false, '', $hide ? 'swcfpc_hide' : '' ); ?>
+<!-- Automatically purge the Cloudflare's cache -->
+<div class="main_section <?php echo $hide ? 'swcfpc_hide' : ''; ?>">
+	<div class="left_column">
+		<label><?php _e( 'Automatically purge the Cloudflare\'s cache when something changes on the website', 'wp-cloudflare-page-cache' ); ?></label>
+		<?php
+		render_description( sprintf( '<strong>%s</strong>', __( 'Example: update/publish a post/page', 'wp-cloudflare-page-cache' ) ), false, false, true );
+		/* translators: %s: link to Nginx instructions page (on this page) */
+		render_description(
+			sprintf(
+				__( 'It is recommended to add the browser caching rules that you find %s.', 'wp-cloudflare-page-cache' ),
+				'<a href="' . $nginx_instructions_page_url . '" target="_blank">' . __( 'on this page', 'wp-cloudflare-page-cache' ) . '</a>'
+			)
+		);
+		?>
 	</div>
+	<div class="right_column">
+		<?php
+		render_checkbox( Constants::SETTING_AUTO_PURGE, __( 'Purge cache for related pages only', 'wp-cloudflare-page-cache' ), true );
+		render_checkbox( Constants::SETTING_AUTO_PURGE_WHOLE, __( 'Purge whole cache', 'wp-cloudflare-page-cache' ) );
+		?>
+	</div>
+	<div class="clear"></div>
+</div>
 
-	<!-- Force cache bypassing for backend with an additional Cloudflare page rule -->
-	<div class="main_section cfworker_not">
-		<div class="left_column">
-			<label><?php _e( 'Force cache bypassing for backend with an additional Cloudflare page rule', 'wp-cloudflare-page-cache' ); ?></label>
-			<?php render_description( __( '<strong>Read here:</strong> by default, all back-end URLs are not cached thanks to some response headers, but if for some circumstances your backend pages are still cached, you can enable this option which will add an <strong>additional page rule on Cloudflare</strong> to force cache bypassing for the whole WordPress backend directly from Cloudflare. This option will be ignored if worker mode is enabled.', 'wp-cloudflare-page-cache' ) ); ?>
-		</div>
-		<div class="right_column">
-			<?php render_switch( 'cf_bypass_backend_page_rule', 0, '', false, true ); ?>
-		</div>
-		<div class="clear"></div>
+<!-- Automatically purge the Page cache when Cloudflare cache is purged -->
+<div class="main_section <?php echo $hide ? 'swcfpc_hide' : 'fallbackcache'; ?>">
+	<div class="left_column">
+		<label><?php _e( 'Automatically purge the Page cache when Cloudflare cache is purged', 'wp-cloudflare-page-cache' ); ?></label>
 	</div>
-<?php } ?>
+	<div class="right_column">
+		<?php render_switch( 'cf_fallback_cache_auto_purge' ); ?>
+	</div>
+	<div class="clear"></div>
+</div>
+
+<!-- Force cache bypassing for backend with an additional Cloudflare page e rule -->
+<div class="main_section <?php echo $hide ? 'swcfpc_hide' : 'cfworker_not'; ?>">
+	<div class="left_column">
+		<label><?php _e( 'Force cache bypassing for backend with an additional Cloudflare page rule', 'wp-cloudflare-page-cache' ); ?></label>
+		<?php render_description( __( '<strong>Read here:</strong> by default, all back-end URLs are not cached thanks to some response headers, but if for some circumstances your backend pages are still cached, you can enable this option which will add an <strong>additional page rule on Cloudflare</strong> to force cache bypassing for the whole WordPress backend directly from Cloudflare. This option will be ignored if worker mode is enabled.', 'wp-cloudflare-page-cache' ) ); ?>
+	</div>
+	<div class="right_column">
+		<?php render_switch( 'cf_bypass_backend_page_rule', 0, '', false, true ); ?>
+	</div>
+	<div class="clear"></div>
+</div>
 
 <?php if ( (int) $sw_cloudflare_pagecache->get_single_config( 'cf_woker_enabled', 0 ) > 0 ) { ?>
 	<!-- CF Worker -->

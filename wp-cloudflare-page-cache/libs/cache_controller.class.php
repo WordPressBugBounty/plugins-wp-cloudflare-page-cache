@@ -1,6 +1,7 @@
 <?php
 
 use SPC\Constants;
+use SPC\Modules\Settings_Manager;
 use SPC\Utils\Helpers;
 
 defined( 'ABSPATH' ) || die( 'Cheatin&#8217; uh?' );
@@ -967,13 +968,13 @@ class SWCFPC_Cache_Controller {
 
 	function purge_cache_when_post_is_published( $new_status, $old_status, $post ) {
 
-		if ( ( $this->main_instance->get_single_config( Constants::SETTING_AUTO_PURGE, 0 ) > 0 || $this->main_instance->get_single_config( 'cf_auto_purge_all', 0 ) > 0 ) && $this->is_cache_enabled() ) {
+		if ( ( Settings_Manager::is_on( Constants::SETTING_AUTO_PURGE ) || Settings_Manager::is_on( Constants::SETTING_AUTO_PURGE_WHOLE ) ) && $this->is_cache_enabled() ) {
 
 			if ( in_array( $old_status, [ 'future', 'draft', 'pending' ] ) && in_array( $new_status, [ 'publish', 'private' ] ) ) {
 
 				$current_action = function_exists( 'current_action' ) ? current_action() : '';
 
-				if ( $this->main_instance->get_single_config( 'cf_auto_purge_all', 0 ) > 0 ) {
+				if ( Settings_Manager::is_on( Constants::SETTING_AUTO_PURGE_WHOLE ) ) {
 
 					$this->purge_all();
 					$this->main_instance->get_logger()->add_log( 'cache_controller::purge_cache_when_post_is_published', "Purge whole Cloudflare cache (fired action: {$current_action}" );
@@ -1003,7 +1004,7 @@ class SWCFPC_Cache_Controller {
 			return;
 		}
 
-		if ( ( $this->main_instance->get_single_config( Constants::SETTING_AUTO_PURGE, 0 ) > 0 || $this->main_instance->get_single_config( 'cf_auto_purge_all', 0 ) > 0 ) && $this->is_cache_enabled() ) {
+		if ( ( Settings_Manager::is_on( Constants::SETTING_AUTO_PURGE ) || Settings_Manager::is_on( Constants::SETTING_AUTO_PURGE_WHOLE ) ) && $this->is_cache_enabled() ) {
 
 			$current_action = function_exists( 'current_action' ) ? current_action() : '';
 
@@ -1020,7 +1021,7 @@ class SWCFPC_Cache_Controller {
 				return;
 			}
 
-			if ( $this->main_instance->get_single_config( 'cf_auto_purge_all', 0 ) > 0 ) {
+			if ( Settings_Manager::is_on( Constants::SETTING_AUTO_PURGE_WHOLE ) ) {
 				$this->purge_all();
 				return;
 			}
@@ -1043,7 +1044,7 @@ class SWCFPC_Cache_Controller {
 
 	function purge_cache_on_theme_edit() {
 
-		if ( ( $this->main_instance->get_single_config( Constants::SETTING_AUTO_PURGE, 0 ) > 0 || $this->main_instance->get_single_config( 'cf_auto_purge_all', 0 ) > 0 ) && $this->is_cache_enabled() ) {
+		if ( ( Settings_Manager::is_on( Constants::SETTING_AUTO_PURGE ) || Settings_Manager::is_on( Constants::SETTING_AUTO_PURGE_WHOLE ) ) && $this->is_cache_enabled() ) {
 
 			$current_action = function_exists( 'current_action' ) ? current_action() : '';
 

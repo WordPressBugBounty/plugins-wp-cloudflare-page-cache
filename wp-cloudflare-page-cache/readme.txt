@@ -3,7 +3,7 @@ Contributors: themeisle, salvatorefresta, isaumya
 Tags: cloudflare, caching ,performance, page caching, pagespeed
 Requires at least: 5.3
 Requires PHP: 7.4
-Tested up to: 6.6
+Tested up to: 6.7
 Stable tag: trunk
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
@@ -166,6 +166,13 @@ First check the questions mentioned in the FAQ tab inside the plugin settings pa
 
 
 == Changelog ==
+
+#####   Version 5.0.9 (2024-11-20)
+
+- Fixes issue where auto-purge was not working when posts were updated
+
+
+
 
 #####   Version 5.0.8 (2024-11-08)
 

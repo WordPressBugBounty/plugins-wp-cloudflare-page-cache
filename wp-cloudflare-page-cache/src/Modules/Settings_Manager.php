@@ -239,4 +239,25 @@ class Settings_Manager implements Module_Interface {
 
 		return $fallback;
 	}
+
+	/**
+	 * Get boolean value/
+	 *
+	 * @param string $key The setting key.
+	 *
+	 * @return int
+	 */
+	public static function is_on( $key ) {
+		/**
+		 * @var \SW_CLOUDFLARE_PAGECACHE $sw_cloudflare_pagecache
+		 */
+		global $sw_cloudflare_pagecache;
+
+		$default_legacy   = $sw_cloudflare_pagecache->get_default_config();
+		$fallback_default = isset( $default_legacy[ $key ] ) ? $default_legacy[ $key ] : false;
+
+		$value = $sw_cloudflare_pagecache->get_single_config( $key, self::get_default_for_field( $key, $fallback_default ) );
+
+		return (int) $value > 0;
+	}
 }
