@@ -167,6 +167,13 @@ First check the questions mentioned in the FAQ tab inside the plugin settings pa
 
 == Changelog ==
 
+#####   Version 5.0.10 (2025-04-09)
+
+- Fix for Keep Settings on the Deactivation setting to stay selected on Save
+
+
+
+
 #####   Version 5.0.9 (2024-11-20)
 
 - Fixes issue where auto-purge was not working when posts were updated
