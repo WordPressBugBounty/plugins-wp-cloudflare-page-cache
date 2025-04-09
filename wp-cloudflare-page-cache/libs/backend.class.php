@@ -1236,7 +1236,7 @@ class SWCFPC_Backend {
 		$install_date = get_option( $current_slug_key . '_install', $current_time );
 		$license_data = get_option( $current_slug_key . '_license_data', array() );
 
-		if ( defined( SPC_PRO_PATH ) ) {
+		if ( defined( 'SPC_PRO_PATH' ) ) {
 			$install_date = min( $install_date, get_option( $free_slug_key . '_install', $current_time ) );
 		}
 

@@ -167,6 +167,13 @@ First check the questions mentioned in the FAQ tab inside the plugin settings pa
 
 == Changelog ==
 
+#####   Version 5.0.11 (2025-04-09)
+
+- Fix fatal error breaking plugin admin settings page
+
+
+
+
 #####   Version 5.0.10 (2025-04-09)
 
 - Fix for Keep Settings on the Deactivation setting to stay selected on Save
