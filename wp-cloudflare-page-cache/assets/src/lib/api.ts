@@ -167,6 +167,12 @@ class SPCApi {
       body: JSON.stringify({ key }),
     });
   }
+
+  async getCachedPages(): Promise<ApiResponse> {
+    return this.makeRequest('/cached-pages', {
+      method: 'GET',
+    });
+  }
 }
 
 export const spcApi = new SPCApi();

@@ -72,7 +72,7 @@ add_header Cache-Control $wp_cf_super_cache_active;`;
               </DrawerTitle>
 
               <DrawerClose>
-                <Button variant="ghost" size="icon" className="absolute top-2 right-2" icon={X}>
+                <Button variant="ghost" size="icon" icon={X}>
                   <span className="sr-only">
                     {i18n.close}
                   </span>

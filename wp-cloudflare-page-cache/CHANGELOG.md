@@ -1,3 +1,9 @@
+#####   Version 5.1.1 (2025-07-15)
+
+### New Features
+
+- **Adds cached pages listing** when user has the `Purge HTML pages only` option enabled.
+
 ####   Version 5.1.0 (2025-07-14)
 
 ### New Features

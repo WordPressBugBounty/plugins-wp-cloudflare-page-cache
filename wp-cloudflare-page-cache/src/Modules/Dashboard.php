@@ -13,7 +13,9 @@ use SPC\Utils\I18n;
 use SPC\Services\Notices_Handler;
 
 class Dashboard implements Module_Interface {
-	public const PAGE_SLUG = 'super-page-cache';
+	public const PAGE_SLUG               = 'super-page-cache';
+	private const SPC_DOCS_ENDPOINT      = 'https://api.themeisle.com/spc/help';
+	private const SPC_DOCS_API_CACHE_KEY = 'spc_docs_api_cache';
 
 	/**
 	 * The SDK service.
@@ -512,7 +514,7 @@ class Dashboard implements Module_Interface {
 	 * @return array
 	 */
 	private function get_help_data() {
-		return [
+		$default_data = [
 			'popular'    => [
 				[
 					'title'     => __( 'How to enable caching for the first time', 'wp-cloudflare-page-cache' ),
@@ -584,5 +586,37 @@ class Dashboard implements Module_Interface {
 				],
 			],
 		];
+
+		$cached_data = get_transient( self::SPC_DOCS_API_CACHE_KEY );
+
+		if ( $cached_data ) {
+			return $cached_data;
+		}
+
+		try {
+			$response = wp_remote_get( defined( 'SPC_DOCS_ENDPOINT' ) ? SPC_DOCS_ENDPOINT : self::SPC_DOCS_ENDPOINT );
+
+			if ( is_wp_error( $response ) ) {
+				return $default_data;
+			}
+
+			$data = json_decode( wp_remote_retrieve_body( $response ), true );
+
+			if ( ! is_array( $data ) ) {
+				return $default_data;
+			}
+
+			$integrity = array_diff_key( $data, $default_data );
+
+			if ( ! empty( $integrity ) ) {
+				return $default_data;
+			}
+
+			set_transient( self::SPC_DOCS_API_CACHE_KEY, $data, 12 * HOUR_IN_SECONDS );
+
+			return $data;
+		} catch ( \Exception $e ) {
+			return $default_data;
+		}
 	}
 }

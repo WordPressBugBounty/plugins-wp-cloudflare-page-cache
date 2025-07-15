@@ -380,17 +380,46 @@ class Rest_Server implements Module_Interface {
 				],
 			]
 		);
+
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/cached-pages',
+			[
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => [ $this, 'get_cached_pages' ],
+				'permission_callback' => function () {
+					return current_user_can( 'manage_options' );
+				},
+			]
+		);
 	}
 
+	/**
+	 * Get cached pages.
+	 *
+	 * @param WP_REST_Request $request Rest request.
+	 *
+	 * @return WP_REST_Response
+	 */
+	public function get_cached_pages( WP_REST_Request $request ) {
+		/**
+		 * @var \SW_CLOUDFLARE_PAGECACHE $sw_cloudflare_pagecache
+		 */
+		global $sw_cloudflare_pagecache;
+
+		$cached_pages = $sw_cloudflare_pagecache->get_html_cache_handler()->get_cached_urls();
+
+		return $this->data_response( $cached_pages );
+	}
 
 	/**
 	 * Store optimization data.
 	 *
-	 * @param \WP_REST_Request $request Rest request.
+	 * @param WP_REST_Request $request Rest request.
 	 *
 	 * @return WP_REST_Response
 	 */
-	public function optimizations( \WP_REST_Request $request ) {
+	public function optimizations( WP_REST_Request $request ) {
 		if ( ! Settings_Store::get_instance()->is_lazyload_viewport_enabled() ) {
 			return $this->message_response( 'Optimization is not enabled', 400 );
 		}

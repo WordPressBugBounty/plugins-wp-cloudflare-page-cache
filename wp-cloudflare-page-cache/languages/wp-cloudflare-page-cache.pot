@@ -98,7 +98,6 @@ msgstr ""
 #: libs/cache_controller.class.php:2198
 #: libs/cache_controller.class.php:2218
 #: libs/cache_controller.class.php:2241
-#: libs/html_cache.class.php:311
 msgid "Permission denied"
 msgstr ""
 
@@ -120,11 +119,6 @@ msgstr ""
 #: libs/cache_controller.class.php:2572
 #, php-format
 msgid "Connection error while retriving the sitemap %1$s: %2$s"
-msgstr ""
-
-#: libs/html_cache.class.php:41
-#: libs/html_cache.class.php:42
-msgid "Super Page Cache cached HTML pages"
 msgstr ""
 
 #: libs/test_cache.class.php:51
@@ -271,7 +265,7 @@ msgid "Cache status: %s - The resource was not cached by default and your curren
 msgstr ""
 
 #: src/Modules/Admin.php:73
-#: src/Modules/Dashboard.php:150
+#: src/Modules/Dashboard.php:152
 msgid "Settings"
 msgstr ""
 
@@ -447,144 +441,144 @@ msgstr ""
 msgid "Unknown"
 msgstr ""
 
-#: src/Modules/Dashboard.php:128
-#: src/Modules/Dashboard.php:138
+#: src/Modules/Dashboard.php:130
+#: src/Modules/Dashboard.php:140
 msgid "Dashboard - Super Page Cache"
 msgstr ""
 
-#: src/Modules/Dashboard.php:129
+#: src/Modules/Dashboard.php:131
 msgid "Super Page Cache"
 msgstr ""
 
-#: src/Modules/Dashboard.php:139
+#: src/Modules/Dashboard.php:141
 msgid "Dashboard"
 msgstr ""
 
-#: src/Modules/Dashboard.php:149
+#: src/Modules/Dashboard.php:151
 msgid "Settings - Super Page Cache"
 msgstr ""
 
-#: src/Modules/Dashboard.php:160
+#: src/Modules/Dashboard.php:162
 msgid "Import/Export Settings - Super Page Cache"
 msgstr ""
 
-#: src/Modules/Dashboard.php:161
+#: src/Modules/Dashboard.php:163
 msgid "Import/Export"
 msgstr ""
 
-#: src/Modules/Dashboard.php:172
+#: src/Modules/Dashboard.php:174
 msgid "License - Super Page Cache"
 msgstr ""
 
-#: src/Modules/Dashboard.php:173
+#: src/Modules/Dashboard.php:175
 msgid "License"
 msgstr ""
 
-#: src/Modules/Dashboard.php:184
+#: src/Modules/Dashboard.php:186
 msgid "Help - Super Page Cache"
 msgstr ""
 
-#: src/Modules/Dashboard.php:185
+#: src/Modules/Dashboard.php:187
 msgid "Help"
 msgstr ""
 
 #. translators: %1$s: rating, %2$d: number of reviews.
-#: src/Modules/Dashboard.php:367
+#: src/Modules/Dashboard.php:369
 #, php-format
 msgid "%1$s out of 5 stars (%2$d reviews)"
 msgstr ""
 
 #. translators: %s: number of active installations.
-#: src/Modules/Dashboard.php:369
+#: src/Modules/Dashboard.php:371
 #, php-format
 msgid "%s+ Active installations"
 msgstr ""
 
-#: src/Modules/Dashboard.php:370
+#: src/Modules/Dashboard.php:372
 msgid "Activate Optimole"
 msgstr ""
 
-#: src/Modules/Dashboard.php:370
+#: src/Modules/Dashboard.php:372
 msgid "Install Optimole"
 msgstr ""
 
-#: src/Modules/Dashboard.php:518
+#: src/Modules/Dashboard.php:520
 msgid "How to enable caching for the first time"
 msgstr ""
 
-#: src/Modules/Dashboard.php:519
+#: src/Modules/Dashboard.php:521
 msgid "Step-by-step guide to activate caching on your website"
 msgstr ""
 
-#: src/Modules/Dashboard.php:524
+#: src/Modules/Dashboard.php:526
 msgid "Why is my cache not working?"
 msgstr ""
 
-#: src/Modules/Dashboard.php:525
+#: src/Modules/Dashboard.php:527
 msgid "Common troubleshooting steps for cache issues"
 msgstr ""
 
-#: src/Modules/Dashboard.php:530
+#: src/Modules/Dashboard.php:532
 msgid "Setting up Cloudflare with Super Page Cache"
 msgstr ""
 
-#: src/Modules/Dashboard.php:531
+#: src/Modules/Dashboard.php:533
 msgid "Complete integration guide for Cloudflare CDN"
 msgstr ""
 
-#: src/Modules/Dashboard.php:536
+#: src/Modules/Dashboard.php:538
 msgid "Optimizing cache for WooCommerce stores"
 msgstr ""
 
-#: src/Modules/Dashboard.php:537
+#: src/Modules/Dashboard.php:539
 msgid "Best practices for e-commerce caching"
 msgstr ""
 
-#: src/Modules/Dashboard.php:544
+#: src/Modules/Dashboard.php:546
 msgid "Getting Started"
 msgstr ""
 
-#: src/Modules/Dashboard.php:545
+#: src/Modules/Dashboard.php:547
 msgid "Basic setup and configuration guides"
 msgstr ""
 
-#: src/Modules/Dashboard.php:551
+#: src/Modules/Dashboard.php:553
 msgid "Troubleshooting"
 msgstr ""
 
-#: src/Modules/Dashboard.php:552
+#: src/Modules/Dashboard.php:554
 msgid "Common issues and solutions"
 msgstr ""
 
-#: src/Modules/Dashboard.php:558
+#: src/Modules/Dashboard.php:560
 msgid "Advanced Settings"
 msgstr ""
 
-#: src/Modules/Dashboard.php:559
+#: src/Modules/Dashboard.php:561
 msgid "Advanced features and configuration"
 msgstr ""
 
-#: src/Modules/Dashboard.php:565
+#: src/Modules/Dashboard.php:567
 msgid "Plugin Integrations"
 msgstr ""
 
-#: src/Modules/Dashboard.php:566
+#: src/Modules/Dashboard.php:568
 msgid "Working with other WordPress plugins"
 msgstr ""
 
-#: src/Modules/Dashboard.php:572
+#: src/Modules/Dashboard.php:574
 msgid "Performance Optimization"
 msgstr ""
 
-#: src/Modules/Dashboard.php:573
+#: src/Modules/Dashboard.php:575
 msgid "Tips to maximize your site speed"
 msgstr ""
 
-#: src/Modules/Dashboard.php:579
+#: src/Modules/Dashboard.php:581
 msgid "Security & Best Practices"
 msgstr ""
 
-#: src/Modules/Dashboard.php:580
+#: src/Modules/Dashboard.php:582
 msgid "Keep your cache secure and optimized"
 msgstr ""
 
@@ -704,184 +698,184 @@ msgstr ""
 msgid "There is an error while optimizing table. Error: %s"
 msgstr ""
 
-#: src/Modules/Rest_Server.php:502
+#: src/Modules/Rest_Server.php:531
 msgid "Failed to purge cache. Please try again later."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:507
-#: src/Modules/Rest_Server.php:537
+#: src/Modules/Rest_Server.php:536
+#: src/Modules/Rest_Server.php:566
 msgid "Cache purge initiated successfully. Please wait for the process to complete."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:524
+#: src/Modules/Rest_Server.php:553
 msgid "Failed to purge Varnish cache. Please try again later."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:532
+#: src/Modules/Rest_Server.php:561
 msgid "An unknown error occurred while purging Varnish cache."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:553
+#: src/Modules/Rest_Server.php:582
 msgid "An error occurred while testing the cache: "
 msgstr ""
 
-#: src/Modules/Rest_Server.php:574
+#: src/Modules/Rest_Server.php:603
 msgid "Logs cleared successfully."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:577
+#: src/Modules/Rest_Server.php:606
 msgid "An error occurred while clearing logs: "
 msgstr ""
 
-#: src/Modules/Rest_Server.php:601
+#: src/Modules/Rest_Server.php:630
 msgid "Preloader is not enabled"
 msgstr ""
 
-#: src/Modules/Rest_Server.php:610
+#: src/Modules/Rest_Server.php:639
 msgid "Unable to start the preloader. Another preloading process is currently running."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:617
+#: src/Modules/Rest_Server.php:646
 msgid "Unable to start background processes: SWCFPC_Preloader_Process does not exists."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:624
+#: src/Modules/Rest_Server.php:653
 msgid "You cannot start the preloader while the page cache is disabled."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:631
+#: src/Modules/Rest_Server.php:660
 msgid "Preloader started successfully"
 msgstr ""
 
-#: src/Modules/Rest_Server.php:715
+#: src/Modules/Rest_Server.php:744
 msgid "Settings reset completed with some errors: "
 msgstr ""
 
-#: src/Modules/Rest_Server.php:721
+#: src/Modules/Rest_Server.php:750
 msgid "Settings reset completed successfully."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:748
+#: src/Modules/Rest_Server.php:777
 msgid "Page cache enabled successfully"
 msgstr ""
 
-#: src/Modules/Rest_Server.php:760
+#: src/Modules/Rest_Server.php:789
 msgid "Page cache enabled successfully."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:779
+#: src/Modules/Rest_Server.php:808
 msgid "Please refresh the page and try again."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:799
+#: src/Modules/Rest_Server.php:828
 msgid "Activated."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:799
+#: src/Modules/Rest_Server.php:828
 msgid "Deactivated"
 msgstr ""
 
-#: src/Modules/Rest_Server.php:818
-#: src/Modules/Rest_Server.php:827
-#: src/Modules/Rest_Server.php:863
+#: src/Modules/Rest_Server.php:847
+#: src/Modules/Rest_Server.php:856
+#: src/Modules/Rest_Server.php:892
 msgid "Invalid settings format provided."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:838
+#: src/Modules/Rest_Server.php:867
 msgid "Settings updated successfully."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:844
+#: src/Modules/Rest_Server.php:873
 msgid "An error occurred while updating settings: "
 msgstr ""
 
-#: src/Modules/Rest_Server.php:869
+#: src/Modules/Rest_Server.php:898
 msgid "Failed to import settings."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:872
+#: src/Modules/Rest_Server.php:901
 msgid "Settings imported successfully."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:889
-#: src/Modules/Rest_Server.php:1027
-#: src/Modules/Rest_Server.php:1194
-#: src/Modules/Rest_Server.php:1219
+#: src/Modules/Rest_Server.php:918
+#: src/Modules/Rest_Server.php:1056
+#: src/Modules/Rest_Server.php:1223
+#: src/Modules/Rest_Server.php:1248
 msgid "Invalid data format provided."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:904
+#: src/Modules/Rest_Server.php:933
 msgid "Email and API Key are required for API Key authentication."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:921
+#: src/Modules/Rest_Server.php:950
 msgid "API Token is required for API Token authentication."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:938
+#: src/Modules/Rest_Server.php:967
 msgid "Invalid authentication mode provided."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:951
+#: src/Modules/Rest_Server.php:980
 msgid "Failed to connect to Cloudflare: "
 msgstr ""
 
-#: src/Modules/Rest_Server.php:966
+#: src/Modules/Rest_Server.php:995
 msgid "Cloudflare connected successfully via API Key."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:967
+#: src/Modules/Rest_Server.php:996
 msgid "Cloudflare connected successfully via API Token."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:973
+#: src/Modules/Rest_Server.php:1002
 msgid "An error occurred while connecting to Cloudflare: "
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1009
+#: src/Modules/Rest_Server.php:1038
 msgid "Disconnected from Cloudflare."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1050
+#: src/Modules/Rest_Server.php:1079
 msgid "Invalid response from Cloudflare."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1067
+#: src/Modules/Rest_Server.php:1096
 msgid "Successfully connected to Cloudflare."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1119
+#: src/Modules/Rest_Server.php:1148
 msgid "An error occurred while optimizing the database:"
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1174
+#: src/Modules/Rest_Server.php:1203
 msgid "Failed to repair the Cloudflare rule."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1179
+#: src/Modules/Rest_Server.php:1208
 msgid "Cloudflare rule repaired successfully."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1200
+#: src/Modules/Rest_Server.php:1229
 msgid "Failed to dismiss notice."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1203
+#: src/Modules/Rest_Server.php:1232
 msgid "Notice dismissed successfully."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1225
-#: src/Modules/Rest_Server.php:1245
+#: src/Modules/Rest_Server.php:1254
+#: src/Modules/Rest_Server.php:1274
 msgid "No changes to save."
 msgstr ""
 
 #. translators: %d is the number of assets with saved rules.
-#: src/Modules/Rest_Server.php:1250
+#: src/Modules/Rest_Server.php:1279
 #, php-format
 msgid "Saved rules for %d assets."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1253
+#: src/Modules/Rest_Server.php:1282
 msgid "Saved rules for one asset."
 msgstr ""
 

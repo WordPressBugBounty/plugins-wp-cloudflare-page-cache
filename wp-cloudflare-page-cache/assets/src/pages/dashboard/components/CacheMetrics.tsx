@@ -1,11 +1,14 @@
+import ViewCachedPages from "@/common/CachedPagesDrawer";
 import TransitionWrapper from "@/common/TransitionWrapper";
 import Card, { CardContent } from "@/components/Card";
 import { formatBytes } from "@/lib/utils";
 
+import { useSettingsStore } from "@/store/optionsStore";
 import { __ } from "@wordpress/i18n";
 import { Clock, Database, HardDrive, TrendingUp } from "lucide-react";
 
 const CacheMetrics = () => {
+  const { isToggleOn } = useSettingsStore();
   const { size } = window.SPCDash.metrics['cache.size'];
   const { ratio } = window.SPCDash.metrics['cache.hitmiss'];
   const { ttfb_ms } = window.SPCDash.metrics['cache.ttfb'];
@@ -40,7 +43,7 @@ const CacheMetrics = () => {
 
   return (
     <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      {Object.values(data).map((item) => (
+      {Object.entries(data).map(([key, item]) => (
         <TransitionWrapper from="top" key={item.title} className={item.className}>
           <Card>
             <CardContent>
@@ -50,6 +53,10 @@ const CacheMetrics = () => {
               </div>
               <div className="flex items-end justify-between">
                 <span className="text-xl font-bold text-foreground">{item.value}</span>
+
+                {isToggleOn('cf_purge_only_html') && key === 'cachedObjects' && (
+                  <ViewCachedPages/>
+                )} 
               </div>
             </CardContent>
           </Card>
