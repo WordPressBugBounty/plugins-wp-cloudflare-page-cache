@@ -1,3 +1,16 @@
+#####   Version 5.1.2 (2025-07-16)
+
+### New Features
+- **Use Cloudflare data in metrics box if available** to provide more accurate performance insights when Cloudflare integration is active.
+
+### Fixes
+- **Fixed log lines overflowing activity log card** to ensure proper display within the dashboard interface.
+- **Prevent edge case fatal error where header might be array** by adding proper type checking.
+- **Fixed migration of Enable Cloudflare CDN & Caching toggle** to ensure proper preservation of cache rule status during plugin updates.
+- **Cached pages drawer loading state not adapted to dark mode** to maintain consistent visual appearance across light and dark themes.
+- **Fixed terminology in Cloudflare connection flow** by referring to zone as domain for better user understanding during the connection setup process.
+- **Updated description for auto-purge on plugin updates** to provide clearer information that the automatic cache clearing behavior happens when the plugin is updated.
+
 #####   Version 5.1.1 (2025-07-15)
 
 ### New Features
