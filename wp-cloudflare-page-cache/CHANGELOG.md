@@ -1,3 +1,8 @@
+#####   Version 5.1.3 (2025-07-21)
+
+### Fixes
+- **Edge case where Cloudflare tab inputs were disabled** when zone id list is already saved to the website, but the user didn't connect the plugin
+
 #####   Version 5.1.2 (2025-07-16)
 
 ### New Features
