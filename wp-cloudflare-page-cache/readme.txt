@@ -285,10 +285,13 @@ First check the questions mentioned in the FAQ tab inside the plugin settings pa
 
 == Changelog ==
 
-#####   Version 5.1.3 (2025-07-21)
+#####   Version 5.1.4 (2025-08-07)
 
 ### Fixes
-- **Edge case where Cloudflare tab inputs were disabled** when zone id list is already saved to the website, but the user didn't connect the plugin
+- **Fixed viewport prefetch using incorrect setting slug** to ensure the prefetch feature properly reads and applies user preferences.
+- **Resolved fatal error when Keep settings on deactivation was disabled** by adding proper checks to prevent errors during plugin deactivation.
+- **Fixed advanced cache functionality when wp-config.php is located above WordPress root** to support non-standard WordPress installations where the configuration file is placed one directory level up.
+- **Updated internal dependencies** to latest versions for improved security and performance.
 
 
 

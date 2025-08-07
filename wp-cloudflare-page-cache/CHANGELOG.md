@@ -1,3 +1,11 @@
+#####   Version 5.1.4 (2025-08-07)
+
+### Fixes
+- **Fixed viewport prefetch using incorrect setting slug** to ensure the prefetch feature properly reads and applies user preferences.
+- **Resolved fatal error when Keep settings on deactivation was disabled** by adding proper checks to prevent errors during plugin deactivation.
+- **Fixed advanced cache functionality when wp-config.php is located above WordPress root** to support non-standard WordPress installations where the configuration file is placed one directory level up.
+- **Updated internal dependencies** to latest versions for improved security and performance.
+
 #####   Version 5.1.3 (2025-07-21)
 
 ### Fixes
