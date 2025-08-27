@@ -1,3 +1,8 @@
+#####   Version 5.1.5 (2025-08-27)
+
+- Fixed the error preventing plugin from uninstallation
+- Fixed issue related to problems updating htaccess file
+
 #####   Version 5.1.4 (2025-08-07)
 
 ### Fixes

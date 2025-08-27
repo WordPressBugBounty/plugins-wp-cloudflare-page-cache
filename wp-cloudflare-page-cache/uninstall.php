@@ -2,8 +2,6 @@
 
 // if uninstall.php is not called by WordPress, die
 
-use SPC\Utils\Helpers;
-
 if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 	die;
 }
@@ -26,7 +24,10 @@ if ( defined( 'SWCFPC_ADVANCED_CACHE' ) ) {
 	@unlink( WP_CONTENT_DIR . '/advanced-cache.php' );
 }
 
-$config_file_path = Helpers::get_wp_config_path();
+$config_file_path = ABSPATH . 'wp-config.php';
+if ( is_file( dirname( ABSPATH ) . '/wp-config.php' ) ) {
+    $config_file_path = dirname( ABSPATH ) . '/wp-config.php';
+}
 
 $parts                    = parse_url( home_url() );
 $plugin_storage_main_path = WP_CONTENT_DIR . '/wp-cloudflare-super-page-cache/';

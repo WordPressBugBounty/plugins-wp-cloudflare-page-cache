@@ -285,13 +285,10 @@ First check the questions mentioned in the FAQ tab inside the plugin settings pa
 
 == Changelog ==
 
-#####   Version 5.1.4 (2025-08-07)
+#####   Version 5.1.5 (2025-08-27)
 
-### Fixes
-- **Fixed viewport prefetch using incorrect setting slug** to ensure the prefetch feature properly reads and applies user preferences.
-- **Resolved fatal error when Keep settings on deactivation was disabled** by adding proper checks to prevent errors during plugin deactivation.
-- **Fixed advanced cache functionality when wp-config.php is located above WordPress root** to support non-standard WordPress installations where the configuration file is placed one directory level up.
-- **Updated internal dependencies** to latest versions for improved security and performance.
+- Fixed the error preventing plugin from uninstallation
+- Fixed issue related to problems updating htaccess file
 
 
 
