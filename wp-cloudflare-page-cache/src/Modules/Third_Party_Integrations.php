@@ -405,8 +405,16 @@ class Third_Party_Integrations implements Module_Interface {
 		Logger::log( 'third_party_integrations::litespeed_hooks', "Purge Cloudflare cache (fired action: {$current_action})" );
 	}
 
-	public function litespeed_single_post_hooks( int $post_id ): void {
+	/**
+	 * @param mixed $post_id
+	 */
+	public function litespeed_single_post_hooks( $post_id ): void {
 		static $done = [];
+		$post_id     = (int) $post_id;
+
+		if ( $post_id <= 0 ) {
+			return;
+		}
 
 		if ( isset( $done[ $post_id ] ) ) {
 			return;
@@ -435,8 +443,17 @@ class Third_Party_Integrations implements Module_Interface {
 		Logger::log( 'third_party_integrations::nginx_helper_purge_all_hooks', "Purge whole cache (fired action: {$current_action})" );
 	}
 
-	public function nginx_helper_purge_single_url_hooks( string $url_to_purge ): void {
+	/**
+	 * @param mixed $url_to_purge
+	 */
+	public function nginx_helper_purge_single_url_hooks( $url_to_purge ): void {
 		if ( Settings_Store::get_instance()->get( Third_Party::SETTING_NGINX_HELPER_PURGE_ON_CACHE_FLUSH, 0 ) == 0 ) {
+			return;
+		}
+
+		$url_to_purge = is_scalar( $url_to_purge ) ? (string) $url_to_purge : '';
+
+		if ( '' === $url_to_purge ) {
 			return;
 		}
 
@@ -480,8 +497,16 @@ class Third_Party_Integrations implements Module_Interface {
 		Logger::log( 'third_party_integrations::spl_purge_all', "Purge whole cache (fired action: {$current_action})" );
 	}
 
-	public function spl_purge_single_post( int $post_id ): void {
+	/**
+	 * @param mixed $post_id
+	 */
+	public function spl_purge_single_post( $post_id ): void {
 		static $done = [];
+		$post_id     = (int) $post_id;
+
+		if ( $post_id <= 0 ) {
+			return;
+		}
 
 		if ( isset( $done[ $post_id ] ) ) {
 			return;
@@ -535,7 +560,16 @@ class Third_Party_Integrations implements Module_Interface {
 		Logger::log( 'third_party_integrations::edd_purge_cache_on_payment_add', "Purge whole cache (fired action: {$current_action})" );
 	}
 
-	public function woocommerce_purge_product_page_on_stock_change( int $product_id ): void {
+	/**
+	 * @param mixed $product_id
+	 */
+	public function woocommerce_purge_product_page_on_stock_change( $product_id ): void {
+		$product_id = (int) $product_id;
+
+		if ( $product_id <= 0 ) {
+			return;
+		}
+
 		if ( ! function_exists( 'wc_get_order' ) ) {
 			return;
 		}

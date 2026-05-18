@@ -1,3 +1,7 @@
+#####   Version 5.3.1 (2026-05-18)
+
+- Fix PHP 8 hook type errors causing fatal errors in certain situations.
+
 ####   Version 5.3.0 (2026-05-18)
 
 ### New Features

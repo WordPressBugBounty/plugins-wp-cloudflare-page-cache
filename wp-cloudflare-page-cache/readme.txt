@@ -4,7 +4,7 @@ Tags: cache, cloudflare, pagespeed, performance, cdn
 Requires at least: 5.3
 Requires PHP: 7.4
 Tested up to: 6.9
-Stable tag: 5.3.0
+Stable tag: 5.3.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -187,29 +187,9 @@ Check the FAQ tab in plugin settings first. If needed, enable log mode and send 
 
 == Changelog ==
 
-####   Version 5.3.0 (2026-05-18)
+#####   Version 5.3.1 (2026-05-18)
 
-### New Features
-
-- **Introduced Cache Tags (PRO)** with  header generation, tag indexing, automatic tag-based purging, async processing, REST and WP-CLI tools, and admin bar inspection support.
-- **Added nonce management for cached HTML (PRO)** so cached pages can safely work with dynamic nonces, including refresh handling and test coverage.
-- **Added HTML minification** for cacheable frontend pages.
-- **Added speculative loading support** for newer WordPress behavior, and unified prefetch settings into a clearer single mode.
-- **Added DNS Prefetch for external domains** to improve connection setup for third-party resources.
-- **Added encrypted settings storage**, WP-CLI management tools, and  overrides for plugin settings.
-- **Added stale-while-revalidate support** for the HTML fallback cache.
-- **Added CSS profiling status** to the SPC admin bar item.
-
-### Fixes
-
-- **Improved Test Cache reliability** with a browser-driven warmup/verify flow, safer response handling, and better Cloudflare header classification.
-- **Validated Cloudflare credentials before saving** to prevent storing invalid connection details.
-- **Fixed rule identification conflicts** by relying on ruleset IDs instead of matching rule descriptions.
-- **Fixed network activation and dependency-loading issues** by cleaning up how internal dependencies are loaded.
-- **Updated Apache and Nginx cache instructions** to better support gzip/Brotli and improve  handling for XML/XSL assets.
-- **Fixed paginated term purge URLs** for sites using no-trailing-slash permalinks.
-- **Switched help content to the Docs API as the single source of truth** and refreshed related help/upsell content.
-- **Improved PHP 8.4 compatibility** in cache tag purge services.
+- Fix PHP 8 hook type errors causing fatal errors in certain situations.
 
 
 

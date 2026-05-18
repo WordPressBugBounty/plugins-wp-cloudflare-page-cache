@@ -184,10 +184,12 @@ class Cache_Invalidation_Hooks implements Module_Interface {
 	}
 
 	/**
+	 * @param mixed $post_id
 	 * @return void
 	 */
-	public function purge_cache_on_post_edit( int $post_id ) {
+	public function purge_cache_on_post_edit( $post_id ) {
 		static $done = [];
+		$post_id     = (int) $post_id;
 
 		if ( isset( $done[ $post_id ] ) ) {
 			return;
@@ -235,9 +237,12 @@ class Cache_Invalidation_Hooks implements Module_Interface {
 	}
 
 	/**
+	 * @param mixed $post_id
 	 * @return void
 	 */
-	public function purge_tags_before_delete_post( int $post_id ) {
+	public function purge_tags_before_delete_post( $post_id ) {
+		$post_id = (int) $post_id;
+
 		$auto_purge       = Settings_Manager::is_on( Constants::SETTING_AUTO_PURGE );
 		$auto_purge_whole = Settings_Manager::is_on( Constants::SETTING_AUTO_PURGE_WHOLE );
 
