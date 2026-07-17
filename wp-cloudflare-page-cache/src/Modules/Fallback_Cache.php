@@ -140,7 +140,7 @@ class Fallback_Cache implements Module_Interface {
 
 		$advanced_cache_dest = WP_CONTENT_DIR . '/advanced-cache.php';
 
-		if ( ! defined( 'SWCFPC_ADVANCED_CACHE' ) || ! file_exists( $advanced_cache_dest ) ) {
+		if ( ! defined( 'SWCFPC_ADVANCED_CACHE' ) || ! file_exists( $advanced_cache_dest ) || ! $this->is_advanced_cache_current_version() ) {
 
 			$advanced_cache_source = SWCFPC_PLUGIN_PATH . 'assets/advanced-cache.php';
 
@@ -149,7 +149,15 @@ class Fallback_Cache implements Module_Interface {
 				return false;
 			}
 
-			if ( file_put_contents( $advanced_cache_dest, file_get_contents( $advanced_cache_source ) ) === false ) {
+			$source_content = file_get_contents( $advanced_cache_source );
+			if ( false === $source_content ) {
+				Logger::log( 'fallback_cache::fallback_cache_advanced_cache_enable', 'Unable to read advanced-cache.php source' );
+				return false;
+			}
+
+			$source_content = str_replace( "'SWCFPC_VERSION_PLACEHOLDER'", "'" . SWCFPC_VERSION . "'", $source_content );
+
+			if ( file_put_contents( $advanced_cache_dest, $source_content ) === false ) {
 				Logger::log( 'fallback_cache::fallback_cache_advanced_cache_enable', 'Unable to copy advanced-cache.php to wp-content directory' );
 				return false;
 			}
@@ -178,6 +186,15 @@ class Fallback_Cache implements Module_Interface {
 		do_action( 'swcfpc_advanced_cache_after_enable' );
 
 		return true;
+	}
+
+	/**
+	 * Whether the installed advanced-cache.php drop-in matches the running plugin version.
+	 *
+	 * @return bool
+	 */
+	private function is_advanced_cache_current_version(): bool {
+		return defined( 'SWCFPC_ADVANCED_CACHE_VERSION' ) && SWCFPC_ADVANCED_CACHE_VERSION === SWCFPC_VERSION;
 	}
 
 
@@ -490,7 +507,7 @@ class Fallback_Cache implements Module_Interface {
 		$url_parsed       = parse_url( $url );
 		$url_query_params = [];
 
-		if ( array_key_exists( 'query', $url_parsed ) ) {
+		if ( is_array( $url_parsed ) && array_key_exists( 'query', $url_parsed ) ) {
 
 			if ( $url_parsed['query'] === '' ) {
 
@@ -548,7 +565,7 @@ class Fallback_Cache implements Module_Interface {
 			}
 
 			if ( $current_uri == '/' ) {
-				$current_uri = $parts['host'];
+				$current_uri = isset( $parts['host'] ) ? $parts['host'] : '';
 			}
 		} else {
 			$current_uri = $_SERVER['REQUEST_URI'];

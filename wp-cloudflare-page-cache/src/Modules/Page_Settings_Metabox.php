@@ -65,13 +65,8 @@ class Page_Settings_Metabox implements Module_Interface {
 	 *
 	 * @return string
 	 */
-	private function get_metabox_title() {
-		$logo_url = Assets_Handler::get_image_url( 'logo.svg' );
-		$output   = '<div class="spc-page-settings-metabox__title">';
-		$output  .= '<img src="' . esc_url( $logo_url ) . '" alt="' . esc_attr__( 'Super Page Cache Logo', 'wp-cloudflare-page-cache' ) . '" class="swcfpc-page-settings-metabox__logo" />';
-		$output  .= '<span>' . __( 'Super Page Cache', 'wp-cloudflare-page-cache' ) . '</span>';
-		$output  .= '</div>';
-		return $output;
+	public function get_metabox_title() {
+		return __( 'Super Page Cache', 'wp-cloudflare-page-cache' );
 	}
 
 	/**

@@ -18,11 +18,12 @@ const ZoneIdConnect = () => {
   const { settings, updateSettings, cloudflareConnected, isSettingOverridden } = useSettingsStore();
   const { asyncLocked, lockAsync } = useAppStore();
   const { setErrorMessage } = useConnectionStore();
+  const zoneIdList = (settings.cf_zoneid_list ?? {}) as Record<string, string>;
 
   const [loading, setLoading] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
   const [isEditingZoneId, setIsEditingZoneId] = useState(false);
-  const [selectedZoneId, setSelectedZoneId] = useState(Object.values(settings.cf_zoneid_list)[0] || '');
+  const [selectedZoneId, setSelectedZoneId] = useState(Object.values(zoneIdList)[0] || '');
   const zoneIdManaged = isSettingOverridden('cf_zoneid');
   const disconnectManaged = [
     'cf_email',
@@ -41,7 +42,7 @@ const ZoneIdConnect = () => {
       label: __('Select a domain', 'wp-cloudflare-page-cache'),
       value: ''
     },
-    ...Object.entries(settings.cf_zoneid_list).map(([domain, zoneId]) => ({ label: domain, value: zoneId }))];
+    ...Object.entries(zoneIdList).map(([domain, zoneId]) => ({ label: domain, value: zoneId }))];
 
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -70,13 +71,27 @@ const ZoneIdConnect = () => {
       return;
     }
 
-    if (response?.data?.permissions?.length > 0) {
+    const responseData = response.data;
+
+    if (!responseData) {
+      toast.error(window.SPCDash.i18n.genericError);
+      return;
+    }
+
+    const missingPermissions = Array.isArray(responseData.permissions) ? responseData.permissions : Object.values(responseData.permissions ?? {});
+
+    if (responseData.success === false || missingPermissions.length > 0) {
       setErrorMessage('permission_error');
 
       return;
     }
 
-    updateSettings(response.data.settings, response.data.meta);
+    if (!responseData.settings || !responseData.meta) {
+      toast.error(window.SPCDash.i18n.genericError);
+      return;
+    }
+
+    updateSettings(responseData.settings, responseData.meta);
     toast.success(response.message);
     setIsEditingZoneId(false);
   }
@@ -96,8 +111,10 @@ const ZoneIdConnect = () => {
     lockAsync(false);
     setDisconnecting(false);
 
-    if (response.success) {
-      updateSettings(response.data.settings, response.data.meta);
+    const disconnectData = response.data;
+
+    if (response.success && disconnectData?.settings && disconnectData?.meta) {
+      updateSettings(disconnectData.settings, disconnectData.meta);
 
       toast.success(response.message);
 
@@ -108,7 +125,7 @@ const ZoneIdConnect = () => {
   }
 
   // Get the domain from the zoneid list.
-  const domain = Object.keys(settings.cf_zoneid_list).find((key) => settings.cf_zoneid_list[key] === settings.cf_zoneid) || '';
+  const domain = Object.keys(zoneIdList).find((key) => zoneIdList[key] === settings.cf_zoneid) || '';
 
   const isTokenAuth = settings.cf_auth_mode === CF_AUTH_MODES.API_TOKEN;
 

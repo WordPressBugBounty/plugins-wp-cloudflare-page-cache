@@ -105,12 +105,27 @@ class Cache_Rule {
 	}
 
 	/**
-	 * Get the host wildcard prefix.
+	 * Get the host wildcard prefix, plus a subdirectory path condition when the
+	 * site's home URL includes a path (e.g. multisite subdirectory installs).
 	 *
 	 * @return string
-	 *
 	 */
 	private function get_host_wildcard() {
-		return sprintf( 'http.host wildcard "%s*"', preg_replace( '#^(https?://)?#', '', Helpers::home_url() ) );
+		$home_url = Helpers::home_url();
+		$parts    = parse_url( $home_url );
+		$host     = ! empty( $parts['host'] ) ? $parts['host'] : preg_replace( '#^(https?://)?#', '', $home_url );
+
+		$condition = sprintf( 'http.host wildcard "%s*"', $host );
+
+		$path = ! empty( $parts['host'] ) && isset( $parts['path'] ) ? rtrim( $parts['path'], '/' ) : '';
+
+		if ( '' !== $path ) {
+			$condition .= sprintf(
+				' and (http.request.uri.path eq "%1$s" or starts_with(http.request.uri.path, "%1$s/"))',
+				$path
+			);
+		}
+
+		return $condition;
 	}
 }

@@ -57,6 +57,10 @@ const settingsReducer = (state: SettingsState, action: SettingsAction): Settings
       }
     };
   case 'UPDATE_SETTINGS':
+    if (!action.payload.settings || typeof action.payload.settings !== 'object') {
+      return state;
+    }
+
     return {
       ...state,
       settings: {

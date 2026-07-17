@@ -1,3 +1,19 @@
+##### [Version 3.3.54](https://github.com/Codeinwp/themeisle-sdk-main/compare/v3.3.53...v3.3.54) (2026-06-23)
+
+- Adds hook to uninstall feedback popup header & fixes JS interference
+
+##### [Version 3.3.53](https://github.com/Codeinwp/themeisle-sdk-main/compare/v3.3.52...v3.3.53) (2026-06-18)
+
+- Fixes dashboard widget header placement on latest WordPress core version;
+- Adds about us services section;
+- Fixes notice dismiss using wrong function name as callback;
+
+##### [Version 3.3.52](https://github.com/Codeinwp/themeisle-sdk-main/compare/v3.3.51...v3.3.52) (2026-05-14)
+
+- Add SPC to plugin path list
+- Add Visualizer Block Directory Promotion
+- Expand LMS Promo Targeting
+
 ##### [Version 3.3.51](https://github.com/Codeinwp/themeisle-sdk-main/compare/v3.3.50...v3.3.51) (2026-03-30)
 
 - Add SDK docs

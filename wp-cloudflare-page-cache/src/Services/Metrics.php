@@ -5,6 +5,7 @@ namespace SPC\Services;
 use RecursiveIteratorIterator;
 use RecursiveDirectoryIterator;
 use FilesystemIterator;
+use SPC\Utils\Helpers;
 
 /**
  *  Metrics
@@ -70,8 +71,7 @@ class Metrics {
 
 		self::$backend = ( function_exists( 'apcu_fetch' ) ? 'apcu' : 'file' );
 
-		$host                  = preg_replace( '/[^A-Za-z0-9.\-_]/', '', $_SERVER['HTTP_HOST'] ?? 'cli' );
-		self::$cache_directory = WP_CONTENT_DIR . "/wp-cloudflare-super-page-cache/{$host}";
+		self::$cache_directory = Helpers::get_plugin_content_dir();
 
 		// Register built-ins
 		self::register( self::HITMISS, [ __CLASS__, 'provide_hitmiss' ] );

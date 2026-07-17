@@ -82,6 +82,7 @@ class I18n {
 			'unusedCssProfileExcluded'           => __( 'Unused CSS profile: Excluded', 'wp-cloudflare-page-cache' ),
 			'unusedCssProfileUnknown'            => __( 'Unused CSS profile: Unknown', 'wp-cloudflare-page-cache' ),
 			'unusedCssProfileNotGenerated'       => __( 'Unused CSS profile: Not generated', 'wp-cloudflare-page-cache' ),
+			'unusedCssProfileTooLarge'           => __( 'Unused CSS profile: Page too large to optimize', 'wp-cloudflare-page-cache' ),
 			/* translators: %s is a comma-separated list of missing device profile names. */
 			'unusedCssProfilePending'            => __( 'Unused CSS profile: Pending (%s)', 'wp-cloudflare-page-cache' ),
 			'unusedCssProfileCacheMissing'       => __( 'Unused CSS profile: Ready (page cache missing)', 'wp-cloudflare-page-cache' ),

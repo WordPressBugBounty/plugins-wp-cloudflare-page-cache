@@ -84,7 +84,7 @@ const ImportCard = () => {
         accept=".json"
         description={
           <>
-            {__('Import the options of the previously exported configuration file.')}
+            {__('Import the options of the previously exported configuration file.', 'wp-cloudflare-page-cache')}
             {' '}
             {__('After importing, you\'ll need to reconnect to Cloudflare by entering your login details again and turning the cache back on.', 'wp-cloudflare-page-cache')}
           </>

@@ -260,7 +260,7 @@ const AdvancedCache = () => {
       description: (
         <>
           {createInterpolateElement(
-            __('<strong>If you use Nginx:</strong> it is not possible for Super Page Cache to automatically change the settings to allow this option to work immediately. For it to work, update these settings and then follow the instructions <button>here</button>.'),
+            __('<strong>If you use Nginx:</strong> it is not possible for Super Page Cache to automatically change the settings to allow this option to work immediately. For it to work, update these settings and then follow the instructions <button>here</button>.', 'wp-cloudflare-page-cache'),
             {
               button: <NginxLinkInstructions />,
               strong: <strong />

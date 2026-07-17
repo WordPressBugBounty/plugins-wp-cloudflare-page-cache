@@ -3,8 +3,8 @@ Contributors: themeisle, salvatorefresta, isaumya
 Tags: cache, cloudflare, pagespeed, performance, cdn
 Requires at least: 5.3
 Requires PHP: 7.4
-Tested up to: 6.9
-Stable tag: 5.3.1
+Tested up to: 7.0
+Stable tag: 5.3.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -187,9 +187,23 @@ Check the FAQ tab in plugin settings first. If needed, enable log mode and send 
 
 == Changelog ==
 
-#####   Version 5.3.1 (2026-05-18)
+#####   Version 5.3.2 (2026-07-17)
 
-- Fix PHP 8 hook type errors causing fatal errors in certain situations.
+- Prevented the Cloudflare settings page from crashing during reconnects when no zone list is returned.
+- Fixed raw HTML appearing as the Super Page Cache metabox name in editor Preferences.
+- Preserved existing settings when upgrading from Free to Pro.
+- Automatically refreshed stale fallback-cache drop-ins after upgrades to prevent compatibility fatal errors.
+- Automatically created the Cloudflare Edge Cache Rule after a successful connection.
+- Prevented SpinupWP cache purges from failing when no URL is available.
+- Fixed wp-content writability warnings so only the relevant warning appears.
+- Fixed Cloudflare rules, disk-cache storage, and metrics isolation for subdirectory multisite sites.
+- Prevented fallback-cache fatal errors when excluded-cookie settings are missing or invalid.
+- Prevented malformed request URLs from triggering fallback-cache errors.
+- Preserved imported excluded-URL and sitemap lists instead of clearing them.
+- Corrected the Remove Unused CSS status shown in the admin bar.
+- Prevented invalid Cloudflare permission responses from blanking the settings page.
+- Gracefully skipped oversized critical CSS while retaining the rest of the optimization profile.
+- Restored translations for the Nginx browser-cache notice and import description.
 
 
 

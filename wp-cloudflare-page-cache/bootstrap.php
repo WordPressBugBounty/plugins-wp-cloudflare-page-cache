@@ -21,10 +21,14 @@ if ( ! class_exists( 'SW_CLOUDFLARE_PAGECACHE' ) ) {
 	define( 'SWCFPC_PLUGIN_FORUM_URL', 'https://wordpress.org/support/plugin/wp-cloudflare-page-cache/' );
 	define( 'SWCFPC_AUTH_MODE_API_KEY', 0 );
 	define( 'SWCFPC_AUTH_MODE_API_TOKEN', 1 );
-	define( 'SWCFPC_VERSION', '5.3.1' );
+	define( 'SWCFPC_VERSION', '5.3.2' );
 	if ( ! defined( 'SPC_METRICS_DIR' ) ) {
 		$home_url_parts = parse_url( home_url() );
-		define( 'SPC_METRICS_DIR', WP_CONTENT_DIR . "/wp-cloudflare-super-page-cache/{$home_url_parts['host']}/metrics" );
+		$home_url_host  = ! empty( $home_url_parts['host'] ) ? $home_url_parts['host'] : '';
+		$home_url_path  = ( is_multisite() && ! is_subdomain_install() && isset( $home_url_parts['path'] ) ) ? trim( $home_url_parts['path'], '/' ) : '';
+		$site_dir_slug  = '' === $home_url_path ? $home_url_host : $home_url_host . '_' . preg_replace( '/[^A-Za-z0-9_-]+/', '-', $home_url_path );
+
+		define( 'SPC_METRICS_DIR', WP_CONTENT_DIR . "/wp-cloudflare-super-page-cache/{$site_dir_slug}/metrics" );
 	}
 
 	if ( ! defined( 'SWCFPC_PRELOADER_MAX_POST_NUMBER' ) ) {
@@ -178,14 +182,17 @@ if ( ! class_exists( 'SW_CLOUDFLARE_PAGECACHE' ) ) {
 
 			if ( defined( 'SWCFPC_ADVANCED_CACHE' ) ) {
 				$store          = Settings_Store::get_instance();
-				$cache_enabled  = $store->get( Constants::SETTING_CF_CACHE_ENABLED );
-				$fallback_cache = $store->get( Constants::SETTING_ENABLE_FALLBACK_CACHE );
-				$curl_enabled   = $store->get( Constants::SETTING_FALLBACK_CACHE_CURL );
+				$cache_enabled  = (int) $store->get( Constants::SETTING_CF_CACHE_ENABLED ) > 0;
+				$fallback_cache = (int) $store->get( Constants::SETTING_ENABLE_FALLBACK_CACHE ) > 0;
+				$curl_enabled   = (int) $store->get( Constants::SETTING_FALLBACK_CACHE_CURL ) > 0;
+				$handler        = $this->core_loader->fallback_cache();
 
-				if ( $cache_enabled > 0 && $fallback_cache > 0 && ! $curl_enabled ) {
-					$handler = $this->core_loader->fallback_cache();
+				if ( $cache_enabled && $fallback_cache && ! $curl_enabled ) {
 					$handler->fallback_cache_advanced_cache_disable();
 					$handler->fallback_cache_advanced_cache_enable();
+				} else {
+					// Stale drop-in exists but should not be active; remove it.
+					$handler->fallback_cache_advanced_cache_disable();
 				}
 			}
 
@@ -238,8 +245,12 @@ if ( ! class_exists( 'SW_CLOUDFLARE_PAGECACHE' ) ) {
 		 * @return void
 		 */
 		public function deactivate_plugin() {
-			// Keep settings when upgrading.
-			if ( defined( 'SPC_PRO_PATH' ) && defined( 'SPC_FREE_PATH' ) ) {
+			// Preserve shared settings during a Free → Pro upgrade, but always
+			// remove the runtime cache. Pro may only be installed (not active yet),
+			// and leaving the content directory in place would allow the drop-in to
+			// keep serving cached pages after Free is deactivated.
+			if ( Helpers::is_pro_installed() ) {
+				Helpers::delete_plugin_content_dir();
 				return;
 			}
 
@@ -304,6 +315,21 @@ if ( ! class_exists( 'SW_CLOUDFLARE_PAGECACHE' ) ) {
 		 */
 		public function get_objects() {
 			return $this->get_modules();
+		}
+
+		/**
+		 * Get a single configuration value.
+		 *
+		 * Legacy method to preserve backward compatibility for old advanced-cache.php drop-ins.
+		 *
+		 * @param string $key
+		 * @param mixed  $default_value
+		 * @return mixed
+		 *
+		 * @deprecated Use Settings_Store::get_instance()->get() instead.
+		 */
+		public function get_single_config( string $key, $default_value = false ) {
+			return Settings_Store::get_instance()->get( $key, $default_value );
 		}
 
 		/**

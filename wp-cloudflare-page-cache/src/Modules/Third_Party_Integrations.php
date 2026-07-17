@@ -213,8 +213,8 @@ class Third_Party_Integrations implements Module_Interface {
 		Logger::log( 'third_party_integrations::purge_spinupwp_cache', 'Purge whole SpinupWP' );
 	}
 
-	public static function purge_spinupwp_cache_single_url( string $url ): void {
-		if ( ! function_exists( 'spinupwp_purge_url' ) ) {
+	public static function purge_spinupwp_cache_single_url( ?string $url ): void {
+		if ( empty( $url ) || ! function_exists( 'spinupwp_purge_url' ) ) {
 			return;
 		}
 
@@ -235,8 +235,8 @@ class Third_Party_Integrations implements Module_Interface {
 		return false;
 	}
 
-	public static function purge_kinsta_cache_single_url( string $url ): bool {
-		if ( ! self::can_kinsta_cache_be_purged() ) {
+	public static function purge_kinsta_cache_single_url( ?string $url ): bool {
+		if ( empty( $url ) || ! self::can_kinsta_cache_be_purged() ) {
 			return false;
 		}
 

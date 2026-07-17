@@ -53,11 +53,13 @@ class Sanitization {
 	 * @return string
 	 */
 	public static function sanitize_excluded_urls( $value, $other_settings = [] ) {
-		if ( ! is_string( $value ) ) {
-			return '';
+		if ( is_string( $value ) ) {
+			$value = explode( "\n", $value );
 		}
 
-		$value = explode( "\n", $value );
+		if ( ! is_array( $value ) ) {
+			return '';
+		}
 
 		if ( isset( $other_settings[ Third_Party::SETTING_WOO_BYPASS_CHECKOUT_PAGE ] ) && (bool) $other_settings[ Third_Party::SETTING_WOO_BYPASS_CHECKOUT_PAGE ] && function_exists( 'wc_get_checkout_url' ) ) {
 			$value[] = wc_get_checkout_url() . '*';
@@ -354,13 +356,21 @@ class Sanitization {
 	 * @return string
 	 */
 	public static function sanitize_preloaded_sitemap_urls( $value, $other_settings = [] ) {
-		if ( ! is_string( $value ) ) {
+		if ( is_string( $value ) ) {
+			$value = explode( "\n", $value );
+		}
+
+		if ( ! is_array( $value ) ) {
 			return '';
 		}
+
 		$sitemap_urls        = [];
-		$parsed_sitemap_urls = explode( "\n", $value );
+		$parsed_sitemap_urls = $value;
 
 		foreach ( $parsed_sitemap_urls as $single_sitemap_url ) {
+			if ( ! is_string( $single_sitemap_url ) ) {
+				continue;
+			}
 
 			$parsed_sitemap_url = parse_url( str_replace( [ "\r", "\n" ], '', $single_sitemap_url ) );
 

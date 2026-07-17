@@ -1,4 +1,4 @@
-type SettingValueType = string | any[] | number;
+type SettingValueType = string | any[] | number | boolean | Record<string, string> | null;
 
 type LocalizedSetting = {
   type: 'bool' | 'int' | 'text' | 'number' | 'textarea' | 'array';
@@ -38,7 +38,7 @@ declare global {
       logViewURL: string;
       logDownloadURL: string;
       configExportURL: string;
-      zoneIdList: Record<string, string>;
+      zoneIdList: Record<string, string> | null;
       rootPagePrefix: string;
       help: Record<string, Record<string, any>[]>;
       directSupportURL: string;

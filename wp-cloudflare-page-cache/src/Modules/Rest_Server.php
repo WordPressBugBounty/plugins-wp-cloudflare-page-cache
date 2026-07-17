@@ -529,7 +529,10 @@ class Rest_Server implements Module_Interface {
 		$profile      = new \SPC_Pro\Modules\PageProfiler\Profile();
 		$critical_css = $this->sanitize_critical_css_payload( $critical_css );
 		if ( is_wp_error( $critical_css ) ) {
-			return $this->message_response( 'Invalid critical CSS payload', 400 );
+			if ( 'critical_css_too_large' !== $critical_css->get_error_code() ) {
+				return $this->message_response( 'Invalid critical CSS payload', 400 );
+			}
+			$critical_css = [ 'too_large' => true ];
 		}
 		$profile->store( $url, $device_type, $above_fold_images, $sanitized_selectors, $sanitized_lcp_data, $critical_css );
 		if ( $profile->exists_all( $url ) ) {
@@ -543,6 +546,9 @@ class Rest_Server implements Module_Interface {
 				2
 			);
 			Cache_Controller::purge_urls( [ ( $page_url ) ] );
+		}
+		if ( ! empty( $critical_css['too_large'] ) ) {
+			return $this->message_response( 'Above fold data stored; critical CSS payload too large and was skipped' );
 		}
 		return $this->message_response( 'Above fold data stored successfully' );
 	}
@@ -566,9 +572,21 @@ class Rest_Server implements Module_Interface {
 		if ( ! empty( $unknown_top_level_keys ) || ! array_key_exists( 'css', $critical_css ) || ! is_array( $critical_css['css'] ) ) {
 			return new \WP_Error( 'invalid_critical_css', 'Invalid critical CSS payload shape.' );
 		}
-		$encoded_payload = wp_json_encode( $critical_css );
-		if ( ! is_string( $encoded_payload ) || strlen( $encoded_payload ) > self::MAX_CRITICAL_CSS_PAYLOAD_BYTES ) {
-			return new \WP_Error( 'invalid_critical_css', 'Critical CSS payload too large.' );
+		/**
+		 * Filter the maximum encoded critical CSS payload size.
+		 *
+		 * Increasing this may inline large CSS blobs into every cached response,
+		 * increasing HTML size and transfer cost. The default remains 256 KB.
+		 *
+		 * @param int $max_payload_bytes Maximum payload size in bytes.
+		 */
+		$max_payload_bytes = (int) apply_filters( 'spc_max_critical_css_payload_bytes', self::MAX_CRITICAL_CSS_PAYLOAD_BYTES );
+		$encoded_payload   = wp_json_encode( $critical_css );
+		if ( ! is_string( $encoded_payload ) ) {
+			return new \WP_Error( 'invalid_critical_css', 'Critical CSS payload could not be encoded.' );
+		}
+		if ( strlen( $encoded_payload ) > $max_payload_bytes ) {
+			return new \WP_Error( 'critical_css_too_large', 'Critical CSS payload too large.' );
 		}
 
 		$allowed_rule_keys = [ '_type', '_cssText', '_order' ];
@@ -1354,6 +1372,22 @@ class Rest_Server implements Module_Interface {
 		}
 
 		$settings->set( Constants::SETTING_CF_ZONE_ID, $zone_id )->save();
+
+		// A successful connection should immediately be usable, so enable Edge Caching.
+		$cache_rule_error = '';
+		$settings->set( Constants::ENABLE_CACHE_RULE, 1 )->save();
+
+		if ( ! ( new Cloudflare_Integration() )->enable_page_cache( $cache_rule_error ) ) {
+			// Keep the connection itself intact; only roll back the cache-rule toggle.
+			$settings->set( Constants::ENABLE_CACHE_RULE, 0 )->save();
+
+			Logger::log( 'cloudflare::cloudflare_confirm_zone_id', 'Failed to enable Edge Caching after connecting to Cloudflare: ' . $cache_rule_error );
+
+			return $this->message_response(
+				__( 'Cloudflare connected, but Edge Caching could not be enabled. Check your Cloudflare permissions and try again.', 'wp-cloudflare-page-cache' ),
+				502
+			);
+		}
 
 		return $this->data_response(
 			[

@@ -111,7 +111,7 @@ const Cache = () => {
                   className="last:mb-0"
                   dangerouslySetInnerHTML={{ __html: i18n.wpConfigNotWritable }}
                 />}
-                {!wpConfigWritable && <li
+                {!wpContentWritable && <li
                   className="last:mb-0"
                   dangerouslySetInnerHTML={{ __html: i18n.wpContentNotWritable }}
                 />}

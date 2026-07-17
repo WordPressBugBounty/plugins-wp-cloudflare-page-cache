@@ -103,10 +103,74 @@ class Helpers {
 	 *
 	 * @return string
 	 */
-	public static function get_plugin_content_dir() {
+	private static function get_site_directory_slug() {
 		$parts = parse_url( home_url() );
+		$host  = ! empty( $parts['host'] ) ? $parts['host'] : '';
 
-		return WP_CONTENT_DIR . "/wp-cloudflare-super-page-cache/{$parts['host']}";
+		if ( ! is_multisite() || is_subdomain_install() ) {
+			return $host;
+		}
+
+		$path = isset( $parts['path'] ) ? trim( $parts['path'], '/' ) : '';
+
+		if ( '' === $path ) {
+			return $host;
+		}
+
+		return $host . '_' . preg_replace( '/[^A-Za-z0-9_-]+/', '-', $path );
+	}
+
+	/**
+	 * Get the path to the multisite paths manifest file.
+	 *
+	 * @return string
+	 */
+	public static function get_multisite_paths_manifest_file() {
+		return WP_CONTENT_DIR . '/wp-cloudflare-super-page-cache/multisite-paths.json';
+	}
+
+	/**
+	 * Register the current site's path in the shared multisite-paths manifest.
+	 *
+	 * @return void
+	 */
+	private static function register_multisite_path() {
+		if ( ! is_multisite() || is_subdomain_install() ) {
+			return;
+		}
+
+		$parts = parse_url( home_url() );
+		$host  = ! empty( $parts['host'] ) ? $parts['host'] : '';
+		$path  = isset( $parts['path'] ) ? trim( $parts['path'], '/' ) : '';
+
+		if ( '' === $host || '' === $path ) {
+			return;
+		}
+
+		$file     = self::get_multisite_paths_manifest_file();
+		$decoded  = file_exists( $file ) ? json_decode( (string) file_get_contents( $file ), true ) : [];
+		$manifest = is_array( $decoded ) ? $decoded : [];
+
+		if ( empty( $manifest[ $host ] ) || ! is_array( $manifest[ $host ] ) ) {
+			$manifest[ $host ] = [];
+		}
+
+		if ( in_array( $path, $manifest[ $host ], true ) ) {
+			return;
+		}
+
+		$manifest[ $host ][] = $path;
+
+		file_put_contents( $file, wp_json_encode( $manifest ), LOCK_EX );
+	}
+
+	/**
+	 * Get the plugin content directory path.
+	 *
+	 * @return string
+	 */
+	public static function get_plugin_content_dir() {
+		return WP_CONTENT_DIR . '/wp-cloudflare-super-page-cache/' . self::get_site_directory_slug();
 	}
 
 	/**
@@ -115,14 +179,13 @@ class Helpers {
 	 * @return void
 	 */
 	public static function create_plugin_content_dir() {
-		$parts = parse_url( home_url() );
-		$path  = WP_CONTENT_DIR . '/wp-cloudflare-super-page-cache/';
+		$path = WP_CONTENT_DIR . '/wp-cloudflare-super-page-cache/';
 
 		if ( ! file_exists( $path ) && wp_mkdir_p( $path ) ) {
 			file_put_contents( "{$path}index.php", '<?php // Silence is golden' );
 		}
 
-		$path .= $parts['host'];
+		$path .= self::get_site_directory_slug();
 
 		if ( ! file_exists( $path ) && wp_mkdir_p( $path ) ) {
 			file_put_contents( "{$path}/index.php", '<?php // Silence is golden' );
@@ -133,6 +196,8 @@ class Helpers {
 		if ( ! file_exists( $nginx_conf ) ) {
 			file_put_contents( $nginx_conf, '' );
 		}
+
+		self::register_multisite_path();
 	}
 
 	/**
@@ -146,6 +211,48 @@ class Helpers {
 		if ( file_exists( $path ) ) {
 			self::delete_directory_recursive( $path );
 		}
+
+		self::deregister_multisite_path();
+	}
+
+	/**
+	 * Remove the current site's path from the shared multisite-paths manifest.
+	 *
+	 * @return void
+	 */
+	private static function deregister_multisite_path() {
+		if ( ! is_multisite() || is_subdomain_install() ) {
+			return;
+		}
+
+		$parts = parse_url( home_url() );
+		$host  = ! empty( $parts['host'] ) ? $parts['host'] : '';
+		$path  = isset( $parts['path'] ) ? trim( $parts['path'], '/' ) : '';
+
+		if ( '' === $host || '' === $path ) {
+			return;
+		}
+
+		$file = self::get_multisite_paths_manifest_file();
+
+		if ( ! file_exists( $file ) ) {
+			return;
+		}
+
+		$decoded  = json_decode( (string) file_get_contents( $file ), true );
+		$manifest = is_array( $decoded ) ? $decoded : [];
+
+		if ( empty( $manifest[ $host ] ) || ! is_array( $manifest[ $host ] ) ) {
+			return;
+		}
+
+		$manifest[ $host ] = array_values( array_diff( $manifest[ $host ], [ $path ] ) );
+
+		if ( empty( $manifest[ $host ] ) ) {
+			unset( $manifest[ $host ] );
+		}
+
+		file_put_contents( $file, wp_json_encode( $manifest ), LOCK_EX );
 	}
 
 	/**
@@ -177,20 +284,49 @@ class Helpers {
 	}
 
 	/**
+	 * Check whether the Pro plugin is installed on disk.
+	 *
+	 * Used to keep the Free → Pro upgrade non-destructive: when the Pro plugin
+	 * is present (already active, or its activation/installation is underway),
+	 * deactivating the Free plugin must not wipe the shared settings.
+	 *
+	 * @return bool
+	 */
+	public static function is_pro_installed() {
+		// Pro is loaded in the current request (both active, or activation in progress).
+		if ( defined( 'SPC_PRO_PATH' ) ) {
+			return true;
+		}
+
+		if ( ! function_exists( 'get_plugins' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		}
+
+		foreach ( array_keys( get_plugins() ) as $plugin_file ) {
+			if ( basename( $plugin_file ) === 'wp-cloudflare-super-page-cache-pro.php' ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
 	 * Get the plugin content directory url.
 	 *
 	 * @return string
 	 */
 	public static function get_plugin_content_dir_url() {
 		$parts = parse_url( home_url() );
+		$host  = ! empty( $parts['host'] ) ? $parts['host'] : '';
 
 		return str_replace(
 			[
-				"https://{$parts['host']}",
-				"http://{$parts['host']}",
+				"https://{$host}",
+				"http://{$host}",
 			],
 			'',
-			content_url( "wp-cloudflare-super-page-cache/{$parts['host']}" )
+			content_url( 'wp-cloudflare-super-page-cache/' . self::get_site_directory_slug() )
 		);
 	}
 

@@ -544,7 +544,7 @@ class Cloudflare_Client extends Cloudflare_Rule {
 			return new \WP_Error( 'cloudflare_error', __( 'Could not check token permissions. Invalid response from Cloudflare.', 'wp-cloudflare-page-cache' ) );
 		}
 		$permissions         = $response_body['result']['permissions'];
-		$missing_permissions = array_diff( self::TOKEN_PERMISSIONS, $permissions );
+		$missing_permissions = array_values( array_diff( self::TOKEN_PERMISSIONS, $permissions ) );
 
 		if ( empty( $missing_permissions ) ) {
 			return [];
