@@ -17,6 +17,8 @@ class Html_Cache implements Module_Interface {
 	 * @return void
 	 */
 	public function init() {
+		add_action( 'init', [ $this, 'maybe_download_all_cached_urls' ] );
+
 		if ( ! Settings_Store::get_instance()->get( Constants::SETTING_PURGE_ONLY_HTML ) ) {
 			return;
 		}
@@ -198,6 +200,15 @@ class Html_Cache implements Module_Interface {
 	}
 
 	/**
+	 * @return int
+	 */
+	public function count_cached_urls() {
+		$files = glob( $this->init_directory() . '/*.tmp' );
+
+		return is_array( $files ) ? count( $files ) : 0;
+	}
+
+	/**
 	 * @return array<int, array{url: string, timestamp: string}>
 	 */
 	public function get_cached_urls() {
@@ -230,6 +241,82 @@ class Html_Cache implements Module_Interface {
 		}
 
 		return $urls;
+	}
+
+	/**
+	 * Download the full list of cached URLs.
+	 *
+	 * @return void
+	 */
+	public function maybe_download_all_cached_urls() {
+		if ( ! isset( $_GET['swcfpc_download_cached_pages'] ) || ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		$format = ( $_GET['swcfpc_download_cached_pages'] === 'csv' ) ? 'csv' : 'txt';
+
+		$this->stream_all_cached_urls( $format );
+
+		exit;
+	}
+
+	/**
+	 * Stream the full list of cached URLs to the browser as a downloadable file.
+	 *
+	 * @param string $format Either 'csv' or 'txt'.
+	 * @return void
+	 */
+	private function stream_all_cached_urls( $format ) {
+		$cache_path = $this->init_directory();
+		$filename   = 'cached-pages-' . gmdate( 'Y-m-d-His' ) . '.' . $format;
+
+		while ( ob_get_level() > 0 ) {
+			ob_end_clean();
+		}
+
+		header( 'Content-Description: File Transfer' );
+		header( 'Content-Type: text/' . ( $format === 'csv' ? 'csv' : 'plain' ) . '; charset=utf-8' );
+		header( "Content-Disposition: attachment; filename={$filename}" );
+		header( 'Content-Transfer-Encoding: binary' );
+		header( 'Connection: Keep-Alive' );
+		header( 'Expires: 0' );
+		header( 'Cache-Control: no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0, s-maxage=0' );
+		header( 'Pragma: public' );
+
+		$date_time_format = 'Y-m-d H:i:s';
+		if ( $format === 'csv' ) {
+			$date_time_format = get_option( 'date_format' ) . ' ' . get_option( 'time_format' );
+			echo "url,timestamp\n";
+		}
+
+		$processed = 0;
+
+		foreach ( new \DirectoryIterator( $cache_path ) as $file_info ) {
+			if ( ! $file_info->isFile() || $file_info->getExtension() !== 'tmp' ) {
+				continue;
+			}
+
+			list( $single_url, $single_timestamp ) = $this->parse_cache_file( $file_info->getPathname() );
+
+			if ( strlen( $single_url ) <= 1 ) {
+				continue;
+			}
+
+			if ( $format === 'csv' ) {
+				echo '"' . str_replace( '"', '""', $single_url ) . '","' . wp_date( $date_time_format, (int) $single_timestamp ) . "\"\n";
+			} else {
+				echo $single_url . "\n";
+			}
+
+			$processed++;
+
+			// Flush periodically so the browser starts receiving data instead of buffering the whole export.
+			if ( $processed % 500 === 0 ) {
+				flush();
+			}
+		}
+
+		flush();
 	}
 
 	/**

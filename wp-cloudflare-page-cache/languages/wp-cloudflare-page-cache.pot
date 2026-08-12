@@ -1,5 +1,5 @@
-# Copyright (C) 2026 Themeisle
-# This file is distributed under the GPLv2 or later.
+# Copyright (C) 2026 Andrei Baicus <andrei@themeisle.com>
+# This file is distributed under the same license as the SPC Dev Toolkit plugin.
 msgid ""
 msgstr ""
 "Project-Id-Version: Feedzy RSS Feeds Premium\n"
@@ -15,31 +15,18 @@ msgstr ""
 "X-Domain: wp-cloudflare-page-cache\n"
 
 #. Plugin Name of the plugin
-#: wp-cloudflare-super-page-cache.php
-#: src/Modules/Admin.php:441
-#: src/Modules/Dashboard.php:143
-#: src/Modules/Page_Settings_Metabox.php:69
-msgid "Super Page Cache"
-msgstr ""
-
-#. Plugin URI of the plugin
-#: wp-cloudflare-super-page-cache.php
-msgid "https://wordpress.org/plugins/wp-cloudflare-page-cache/"
+#: dev-toolkit.php
+msgid "SPC Dev Toolkit"
 msgstr ""
 
 #. Description of the plugin
-#: wp-cloudflare-super-page-cache.php
-msgid "A WordPress performance plugin that lets you get Edge Caching enabled on a Cloudflare free plan."
+#: dev-toolkit.php
+msgid "Developer toolkit for Super Page Cache."
 msgstr ""
 
 #. Author of the plugin
-#: wp-cloudflare-super-page-cache.php
-msgid "Themeisle"
-msgstr ""
-
-#. Author URI of the plugin
-#: wp-cloudflare-super-page-cache.php
-msgid "https://themeisle.com"
+#: dev-toolkit.php
+msgid "Andrei Baicus <andrei@themeisle.com>"
 msgstr ""
 
 #. translators: %s: Name of deactivated plugin
@@ -219,6 +206,12 @@ msgstr ""
 
 #: src/Modules/Admin.php:379
 msgid "Purge the entire cache? All cached pages will be regenerated on the next visit, which may briefly slow down your site."
+msgstr ""
+
+#: src/Modules/Admin.php:441
+#: src/Modules/Dashboard.php:143
+#: src/Modules/Page_Settings_Metabox.php:69
+msgid "Super Page Cache"
 msgstr ""
 
 #: src/Modules/Admin.php:453
@@ -459,22 +452,22 @@ msgid "Help"
 msgstr ""
 
 #. translators: %1$s: rating, %2$d: number of reviews.
-#: src/Modules/Dashboard.php:400
+#: src/Modules/Dashboard.php:402
 #, php-format
 msgid "%1$s out of 5 stars (%2$d reviews)"
 msgstr ""
 
 #. translators: %s: number of active installations.
-#: src/Modules/Dashboard.php:402
+#: src/Modules/Dashboard.php:404
 #, php-format
 msgid "%s+ Active installations"
 msgstr ""
 
-#: src/Modules/Dashboard.php:403
+#: src/Modules/Dashboard.php:405
 msgid "Activate Robin Image Optimizer"
 msgstr ""
 
-#: src/Modules/Dashboard.php:403
+#: src/Modules/Dashboard.php:405
 msgid "Install Robin Image Optimizer"
 msgstr ""
 

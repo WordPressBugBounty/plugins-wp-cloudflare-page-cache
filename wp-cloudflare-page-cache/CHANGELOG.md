@@ -1,3 +1,13 @@
+#####   Version 5.3.3 (2026-08-12)
+
+- Fixed an issue where the cache test could incorrectly report an error after updating the plugin because outdated files were still being served from the cache.
+- Clarified the dashboard label for cached objects to make clear that it refers to the disk page cache.
+- Fixed an issue where pages served from the server-level page cache were bypassed by Cloudflare instead of being cached.
+- Fixed an issue where the dashboard could show no cached objects even though cached pages were being tracked and listed.
+- Added the ability to download the complete list of cached page URLs from the dashboard as a text or CSV file.
+- Added support for defining Cloudflare API credentials as constants in wp-config.php.
+- Updated dependencies
+
 #####   Version 5.3.2 (2026-07-17)
 
 - Prevented the Cloudflare settings page from crashing during reconnects when no zone list is returned.

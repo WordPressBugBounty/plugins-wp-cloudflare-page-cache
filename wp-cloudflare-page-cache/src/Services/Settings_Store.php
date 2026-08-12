@@ -179,7 +179,7 @@ class Settings_Store {
 	 * @return string
 	 */
 	public function get_cloudflare_zone_id() {
-		if ( defined( 'SWCFPC_CF_API_ZONE_ID' ) ) {
+		if ( defined( 'SWCFPC_CF_API_ZONE_ID' ) && '' !== (string) SWCFPC_CF_API_ZONE_ID ) {
 			return SWCFPC_CF_API_ZONE_ID;
 		}
 
@@ -192,7 +192,7 @@ class Settings_Store {
 	 * @return string
 	 */
 	public function get_cloudflare_api_key() {
-		if ( defined( 'SWCFPC_CF_API_KEY' ) ) {
+		if ( defined( 'SWCFPC_CF_API_KEY' ) && '' !== (string) SWCFPC_CF_API_KEY ) {
 			return SWCFPC_CF_API_KEY;
 		}
 
@@ -205,7 +205,7 @@ class Settings_Store {
 	 * @return string
 	 */
 	public function get_cloudflare_api_email() {
-		if ( defined( 'SWCFPC_CF_API_EMAIL' ) ) {
+		if ( defined( 'SWCFPC_CF_API_EMAIL' ) && '' !== (string) SWCFPC_CF_API_EMAIL ) {
 			return SWCFPC_CF_API_EMAIL;
 		}
 
@@ -218,11 +218,37 @@ class Settings_Store {
 	 * @return string
 	 */
 	public function get_cloudflare_api_token() {
-		if ( defined( 'SWCFPC_CF_API_TOKEN' ) ) {
+		if ( defined( 'SWCFPC_CF_API_TOKEN' ) && '' !== (string) SWCFPC_CF_API_TOKEN ) {
 			return SWCFPC_CF_API_TOKEN;
 		}
 
 		return $this->get( Constants::SETTING_CF_API_TOKEN );
+	}
+
+	/**
+	 * Get the Cloudflare authentication mode.
+	 *
+	 * wp-config.php constants always take precedence over the stored setting:
+	 * if SWCFPC_CF_API_TOKEN is defined with a non-empty value, token auth is
+	 * in effect; otherwise, if both SWCFPC_CF_API_EMAIL and SWCFPC_CF_API_KEY
+	 * are defined with non-empty values, key auth is in effect. Only when
+	 * none of those constants are set does the stored setting decide.
+	 *
+	 * @return int
+	 */
+	public function get_cloudflare_auth_mode(): int {
+		if ( defined( 'SWCFPC_CF_API_TOKEN' ) && '' !== (string) SWCFPC_CF_API_TOKEN ) {
+			return SWCFPC_AUTH_MODE_API_TOKEN;
+		}
+
+		if (
+			defined( 'SWCFPC_CF_API_EMAIL' ) && '' !== (string) SWCFPC_CF_API_EMAIL
+			&& defined( 'SWCFPC_CF_API_KEY' ) && '' !== (string) SWCFPC_CF_API_KEY
+		) {
+			return SWCFPC_AUTH_MODE_API_KEY;
+		}
+
+		return (int) $this->get( Constants::SETTING_AUTH_MODE );
 	}
 
 	/**
@@ -612,15 +638,23 @@ class Settings_Store {
 			return false;
 		}
 
-		$auth_mode = (int) $this->get( Constants::SETTING_AUTH_MODE );
+		$auth_mode = $this->get_cloudflare_auth_mode();
 
 		if ( SWCFPC_AUTH_MODE_API_TOKEN === $auth_mode ) {
+			if ( defined( 'SWCFPC_CF_API_TOKEN' ) && '' !== (string) SWCFPC_CF_API_TOKEN ) {
+				return false;
+			}
+
 			$setting = $this->get_with_source( Constants::SETTING_CF_API_TOKEN );
 
 			return self::CONFIG_SOURCE_CONST !== $setting['source'] && ! $this->is_encrypted_setting_readable( Constants::SETTING_CF_API_TOKEN );
 		}
 
 		if ( SWCFPC_AUTH_MODE_API_KEY === $auth_mode ) {
+			if ( defined( 'SWCFPC_CF_API_KEY' ) && '' !== (string) SWCFPC_CF_API_KEY ) {
+				return false;
+			}
+
 			$key_setting = $this->get_with_source( Constants::SETTING_CF_API_KEY );
 
 			return self::CONFIG_SOURCE_CONST !== $key_setting['source'] && ! $this->is_encrypted_setting_readable( Constants::SETTING_CF_API_KEY );
@@ -775,14 +809,14 @@ class Settings_Store {
 	 * @return bool
 	 */
 	private function has_usable_cloudflare_credentials(): bool {
-		$auth_mode = (int) $this->get( Constants::SETTING_AUTH_MODE );
+		$auth_mode = $this->get_cloudflare_auth_mode();
 
 		if ( SWCFPC_AUTH_MODE_API_TOKEN === $auth_mode ) {
-			return '' !== (string) $this->get( Constants::SETTING_CF_API_TOKEN, '' );
+			return '' !== (string) $this->get_cloudflare_api_token();
 		}
 
 		if ( SWCFPC_AUTH_MODE_API_KEY === $auth_mode ) {
-			return '' !== (string) $this->get( Constants::SETTING_CF_EMAIL, '' ) && '' !== (string) $this->get( Constants::SETTING_CF_API_KEY, '' );
+			return '' !== (string) $this->get_cloudflare_api_email() && '' !== (string) $this->get_cloudflare_api_key();
 		}
 
 		return false;

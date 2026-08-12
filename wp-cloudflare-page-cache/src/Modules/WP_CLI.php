@@ -61,7 +61,7 @@ class WP_CLI extends \WP_CLI_Command implements Module_Interface {
 			'plugin_version'                        => SWCFPC_VERSION,
 			'cloudflare_connected'                  => $settings->is_cloudflare_connected(),
 			'cloudflare_api_enabled'                => $cloudflare->is_enabled(),
-			'cloudflare_auth_mode'                  => $this->get_auth_mode_label( (int) $settings->get( Constants::SETTING_AUTH_MODE ) ),
+			'cloudflare_auth_mode'                  => $this->get_auth_mode_label( $settings->get_cloudflare_auth_mode() ),
 			'cloudflare_zone_selected'              => '' !== (string) $settings->get_cloudflare_zone_id(),
 			'cloudflare_zone_candidates'            => is_array( $zone_list ) ? count( $zone_list ) : 0,
 			'cache_rule_configured'                 => $cloudflare->has_cache_rule(),
@@ -104,10 +104,10 @@ class WP_CLI extends \WP_CLI_Command implements Module_Interface {
 		$format                        = $assoc_args['format'] ?? 'table';
 		$run_cache_test                = \WP_CLI\Utils\get_flag_value( $assoc_args, 'run-cache-test', false );
 		$zone_selected                 = '' !== (string) $settings->get_cloudflare_zone_id();
-		$auth_mode                     = (int) $settings->get( Constants::SETTING_AUTH_MODE );
+		$auth_mode                     = $settings->get_cloudflare_auth_mode();
 		$has_credentials               = (
-			( SWCFPC_AUTH_MODE_API_KEY === $auth_mode && '' !== (string) $settings->get( Constants::SETTING_CF_EMAIL ) && '' !== (string) $settings->get( Constants::SETTING_CF_API_KEY ) ) ||
-			( SWCFPC_AUTH_MODE_API_TOKEN === $auth_mode && '' !== (string) $settings->get( Constants::SETTING_CF_API_TOKEN ) )
+			( SWCFPC_AUTH_MODE_API_KEY === $auth_mode && '' !== (string) $settings->get_cloudflare_api_email() && '' !== (string) $settings->get_cloudflare_api_key() ) ||
+			( SWCFPC_AUTH_MODE_API_TOKEN === $auth_mode && '' !== (string) $settings->get_cloudflare_api_token() )
 		);
 		$actionable_invalid_encryption = $settings->has_unreadable_active_cloudflare_credentials();
 

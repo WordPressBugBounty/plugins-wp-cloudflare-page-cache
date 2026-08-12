@@ -6,7 +6,7 @@ import { useDashboardStore } from "@/store/dashboardStore";
 
 import { useSettingsStore } from "@/store/optionsStore";
 import { __ } from "@wordpress/i18n";
-import { Clock, Database, HardDrive, LucideIcon, TrendingUp } from "lucide-react";
+import { Clock, FileText, HardDrive, LucideIcon, TrendingUp } from "lucide-react";
 
 const CacheMetrics = () => {
   const { analyticsData, analyticsAvailable, loadingAnalytics } = useDashboardStore();
@@ -34,9 +34,9 @@ const CacheMetrics = () => {
   const data = {
     hitRate: hitRateData,
     cachedObjects: {
-      title: __('Cached Objects', 'wp-cloudflare-page-cache'),
+      title: __('Cached Pages', 'wp-cloudflare-page-cache'),
       value: html_files !== 'n/a' ? html_files : 'n/a',
-      icon: Database,
+      icon: FileText,
       className: "delay-200"
     },
     cacheSize: {

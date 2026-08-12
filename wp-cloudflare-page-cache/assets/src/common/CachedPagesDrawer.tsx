@@ -1,3 +1,4 @@
+import Select from "@/common/Select";
 import Button from "@/components/Button";
 import { Drawer, DrawerClose, DrawerContent, DrawerHeader, DrawerPortal, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -7,13 +8,25 @@ import { cn } from "@/lib/utils";
 import { useAppStore } from "@/store/store";
 import { createInterpolateElement, useEffect, useState } from "@wordpress/element";
 import { __, sprintf } from "@wordpress/i18n";
-import { Calendar, CircleOff, Copy, ExternalLink, EyeIcon, FileText, RotateCcw, TriangleAlert, X } from 'lucide-react';
+import { Calendar, CircleOff, Copy, DownloadIcon, ExternalLink, EyeIcon, FileText, RotateCcw, TriangleAlert, X } from 'lucide-react';
 import { toast } from "sonner";
 
 type CachedPage = {
   url: string;
   timestamp: number;
 }
+
+type DownloadFormat = 'txt' | 'csv';
+
+const DOWNLOAD_FORMAT_OPTIONS: { value: DownloadFormat, label: string }[] = [
+  { value: 'txt', label: __('TXT', 'wp-cloudflare-page-cache') },
+  { value: 'csv', label: __('CSV', 'wp-cloudflare-page-cache') },
+];
+
+const DOWNLOAD_FORMAT_URLS: Record<DownloadFormat, string> = {
+  txt: window.SPCDash.cachedPagesDownloadTxtURL,
+  csv: window.SPCDash.cachedPagesDownloadCsvURL,
+};
 
 const ViewCachedPages = () => {
   const { darkMode } = useAppStore();
@@ -22,7 +35,8 @@ const ViewCachedPages = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [cachedPages, setCachedPages] = useState<CachedPage[]>([]);
   const [error, setError] = useState<string | null>(null);
-  
+  const [downloadFormat, setDownloadFormat] = useState<DownloadFormat>('txt');
+
   const getCachedPages = () => {
     setIsLoading(true);
     setError(null);
@@ -73,13 +87,30 @@ const ViewCachedPages = () => {
                 </div>
               </DrawerTitle>
 
-              <div>
+              <div className="flex items-center gap-2">
+                <Select
+                  id="cached-pages-download-format"
+                  value={downloadFormat}
+                  onChange={(value) => setDownloadFormat(value as DownloadFormat)}
+                  options={DOWNLOAD_FORMAT_OPTIONS}
+                  className="h-10 text-xs px-10 py-3"
+                />
+                <Button
+                  variant="outline"
+                  size="xs"
+                  href={DOWNLOAD_FORMAT_URLS[downloadFormat]}
+                  target="_blank"
+                  icon={DownloadIcon}
+                  className="h-10 px-6 py-3"
+                >
+                  {__('Download', 'wp-cloudflare-page-cache')}
+                </Button>
                 <Button
                   onClick={getCachedPages}
                   variant="ghost"
                   size="icon"
                   icon={RotateCcw}
-                  loader={isLoading} 
+                  loader={isLoading}
                   disabled={isLoading}
                 >
                   <span className="sr-only">{__('Refresh', 'wp-cloudflare-page-cache')}</span>

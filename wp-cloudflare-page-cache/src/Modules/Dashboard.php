@@ -306,6 +306,8 @@ class Dashboard implements Module_Interface {
 				'logDownloadURL'                      => add_query_arg( [ 'swcfpc_download_log' => 1 ], admin_url() ),
 				'logViewURL'                          => add_query_arg( [ 'swcfpc_download_log' => 'view' ], admin_url() ),
 				'configExportURL'                     => add_query_arg( [ 'swcfpc_export_config' => 1 ], admin_url() ),
+				'cachedPagesDownloadTxtURL'           => add_query_arg( [ 'swcfpc_download_cached_pages' => 'txt' ], admin_url() ),
+				'cachedPagesDownloadCsvURL'           => add_query_arg( [ 'swcfpc_download_cached_pages' => 'csv' ], admin_url() ),
 
 				// Database Optimization
 				'databaseOptimizationScheduleOptions' => Database_Optimization::get_schedule_options(),

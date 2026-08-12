@@ -426,7 +426,7 @@ abstract class Cloudflare_Rule {
 	 */
 	protected function get_api_auth_args( $use_curl = false, array $auth_overrides = [] ) {
 		$settings  = Settings_Store::get_instance();
-		$auth_mode = $auth_overrides[ Constants::SETTING_AUTH_MODE ] ?? $settings->get( Constants::SETTING_AUTH_MODE );
+		$auth_mode = $auth_overrides[ Constants::SETTING_AUTH_MODE ] ?? $settings->get_cloudflare_auth_mode();
 
 		$req_args = [
 			'timeout' => defined( 'SWCFPC_CURL_TIMEOUT' ) ? SWCFPC_CURL_TIMEOUT : 10,
@@ -438,11 +438,11 @@ abstract class Cloudflare_Rule {
 		];
 
 		if ( (int) $auth_mode === SWCFPC_AUTH_MODE_API_TOKEN ) {
-			$token                    = $auth_overrides[ Constants::SETTING_CF_API_TOKEN ] ?? $settings->get( Constants::SETTING_CF_API_TOKEN );
+			$token                    = $auth_overrides[ Constants::SETTING_CF_API_TOKEN ] ?? $settings->get_cloudflare_api_token();
 			$headers['Authorization'] = "Bearer {$token}";
 		} else {
-			$headers['X-Auth-Email'] = $auth_overrides[ Constants::SETTING_CF_EMAIL ] ?? $settings->get( Constants::SETTING_CF_EMAIL );
-			$headers['X-Auth-Key']   = $auth_overrides[ Constants::SETTING_CF_API_KEY ] ?? $settings->get( Constants::SETTING_CF_API_KEY );
+			$headers['X-Auth-Email'] = $auth_overrides[ Constants::SETTING_CF_EMAIL ] ?? $settings->get_cloudflare_api_email();
+			$headers['X-Auth-Key']   = $auth_overrides[ Constants::SETTING_CF_API_KEY ] ?? $settings->get_cloudflare_api_key();
 		}
 
 		if ( $use_curl ) {
@@ -529,7 +529,7 @@ abstract class Cloudflare_Rule {
 	 * @return bool
 	 */
 	protected function is_token_auth() {
-		return SWCFPC_AUTH_MODE_API_TOKEN === (int) Settings_Store::get_instance()->get( Constants::SETTING_AUTH_MODE );
+		return SWCFPC_AUTH_MODE_API_TOKEN === Settings_Store::get_instance()->get_cloudflare_auth_mode();
 	}
 
 	/**

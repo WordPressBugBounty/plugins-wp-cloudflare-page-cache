@@ -38,6 +38,8 @@ declare global {
       logViewURL: string;
       logDownloadURL: string;
       configExportURL: string;
+      cachedPagesDownloadTxtURL: string;
+      cachedPagesDownloadCsvURL: string;
       zoneIdList: Record<string, string> | null;
       rootPagePrefix: string;
       help: Record<string, Record<string, any>[]>;

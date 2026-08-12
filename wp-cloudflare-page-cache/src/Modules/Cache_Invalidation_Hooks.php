@@ -291,6 +291,42 @@ class Cache_Invalidation_Hooks implements Module_Interface {
 	}
 
 	/**
+	 * Build the list of paginated archive URLs for a given base URL and item count.
+	 *
+	 * @param string $base_url   Un-paginated archive URL.
+	 * @param int    $item_count Total number of items shown on the archive.
+	 *
+	 * @return array<int, string>
+	 */
+	private static function get_paginated_urls( $base_url, $item_count ) {
+		global $wp_rewrite;
+
+		$per_page = (int) Settings_Store::get_instance()->get( Constants::SETTING_POSTS_PER_PAGE );
+
+		if ( $per_page <= 0 || $item_count <= 0 ) {
+			return [];
+		}
+
+		// $item_count reflects the archive *after* this status change, so a shrinking
+		// archive (e.g. a post being unpublished) would otherwise leave the page that
+		// just dropped below the boundary stale forever. Purge one page beyond the
+		// current max so that boundary page is caught too.
+		$pages_number = ceil( $item_count / $per_page ) + 1;
+		$max_pages    = $pages_number > 10 ? 10 : $pages_number;
+		$urls         = [];
+
+		for ( $i = 2; $i <= $max_pages; $i++ ) {
+			if ( ! $wp_rewrite->using_permalinks() ) {
+				$urls[] = add_query_arg( 'paged', $i, $base_url );
+				continue;
+			}
+			$urls[] = trailingslashit( $base_url ) . user_trailingslashit( $wp_rewrite->pagination_base . '/' . $i, 'paged' );
+		}
+
+		return $urls;
+	}
+
+	/**
 	 * Build the list of URLs that should be purged when a given post changes.
 	 *
 	 * @param int $post_id
@@ -298,7 +334,6 @@ class Cache_Invalidation_Hooks implements Module_Interface {
 	 * @return array<int, string>
 	 */
 	public static function get_post_related_links( $post_id ) {
-		$settings   = Settings_Store::get_instance();
 		$listofurls = apply_filters( 'swcfpc_post_related_url_init', [], $post_id );
 		$post_type  = get_post_type( $post_id );
 
@@ -323,16 +358,7 @@ class Cache_Invalidation_Hooks implements Module_Interface {
 				}
 
 				$listofurls[] = $term_link;
-
-				$per_page = (int) $settings->get( Constants::SETTING_POSTS_PER_PAGE, 0 );
-				if ( $per_page > 0 ) {
-					$pages_number = ceil( $term->count / $per_page );
-					$max_pages    = $pages_number > 10 ? 10 : $pages_number;
-
-					for ( $i = 2; $i <= $max_pages; $i++ ) {
-						$listofurls[] = trailingslashit( $term_link ) . 'page/' . user_trailingslashit( (string) $i );
-					}
-				}
+				$listofurls   = array_merge( $listofurls, self::get_paginated_urls( $term_link, (int) $term->count ) );
 			}
 		}
 
@@ -351,13 +377,25 @@ class Cache_Invalidation_Hooks implements Module_Interface {
 			$listofurls[] = "{$trash_post}feed/";
 		}
 
+		$published_posts_count = (int) wp_count_posts( 'post' )->publish;
+
 		if ( defined( 'SWCFPC_HOME_PAGE_SHOWS_POSTS' ) && \SWCFPC_HOME_PAGE_SHOWS_POSTS ) {
-			$listofurls[] = home_url( '/' );
+			$home_url     = home_url( '/' );
+			$listofurls[] = $home_url;
+
+			// A static front page isn't paginated - only the "posts page" mode below is.
+			if ( get_option( 'show_on_front' ) !== 'page' ) {
+				$listofurls = array_merge( $listofurls, self::get_paginated_urls( $home_url, $published_posts_count ) );
+			}
 		}
 
-		$page_link = get_permalink( get_option( 'page_for_posts' ) );
-		if ( is_string( $page_link ) && ! empty( $page_link ) && get_option( 'show_on_front' ) == 'page' ) {
-			$listofurls[] = $page_link;
+		$posts_page_id = (int) get_option( 'page_for_posts', 0 );
+		if ( $posts_page_id > 0 && get_option( 'show_on_front' ) === 'page' ) {
+			$page_link = get_permalink( $posts_page_id );
+			if ( is_string( $page_link ) && ! empty( $page_link ) ) {
+				$listofurls[] = $page_link;
+				$listofurls   = array_merge( $listofurls, self::get_paginated_urls( $page_link, $published_posts_count ) );
+			}
 		}
 
 		return $listofurls;

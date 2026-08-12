@@ -5,6 +5,7 @@ namespace SPC\Services;
 use RecursiveIteratorIterator;
 use RecursiveDirectoryIterator;
 use FilesystemIterator;
+use SPC\Loader;
 use SPC\Utils\Helpers;
 
 /**
@@ -202,21 +203,26 @@ class Metrics {
 	 */
 	private static function provide_filecount(): array {
 
-		if ( ! is_dir( self::$cache_directory ) ) {
-			return [ 'html_files' => 'n/a' ];
+		$count = 0;
+
+		if ( is_dir( self::$cache_directory ) ) {
+			$it = new RecursiveIteratorIterator(
+				new RecursiveDirectoryIterator(
+					self::$cache_directory,
+					FilesystemIterator::SKIP_DOTS | FilesystemIterator::FOLLOW_SYMLINKS
+				)
+			);
+			foreach ( $it as $f ) {
+				if ( $f->isFile() && strtolower( $f->getExtension() ) === 'html' ) {
+					$count++;
+				}
+			}
 		}
 
-		$count = 0;
-		$it    = new RecursiveIteratorIterator(
-			new RecursiveDirectoryIterator(
-				self::$cache_directory,
-				FilesystemIterator::SKIP_DOTS | FilesystemIterator::FOLLOW_SYMLINKS
-			)
-		);
-		foreach ( $it as $f ) {
-			if ( $f->isFile() && strtolower( $f->getExtension() ) === 'html' ) {
-				$count++;
-			}
+		if ( $count === 0 ) {
+			// Without disk fallback cache files, report the HTML cached-URLs tracker
+			// so the stat matches the cached-pages drawer it sits next to.
+			$count = Loader::get()->html_cache()->count_cached_urls();
 		}
 
 		return $count > 0

@@ -1342,7 +1342,7 @@ class Rest_Server implements Module_Interface {
 			return $this->message_response( $this->get_overridden_settings_message( [ Constants::SETTING_CF_ZONE_ID ] ), 409 );
 		}
 
-		$is_token_auth = $settings->get( Constants::SETTING_AUTH_MODE ) === SWCFPC_AUTH_MODE_API_TOKEN;
+		$is_token_auth = $settings->get_cloudflare_auth_mode() === SWCFPC_AUTH_MODE_API_TOKEN;
 
 		if ( $is_token_auth ) {
 			/**
