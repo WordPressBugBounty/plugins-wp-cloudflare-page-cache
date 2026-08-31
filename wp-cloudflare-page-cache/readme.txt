@@ -3,8 +3,8 @@ Contributors: themeisle, salvatorefresta, isaumya
 Tags: cache, cloudflare, pagespeed, performance, cdn
 Requires at least: 5.3
 Requires PHP: 7.4
-Tested up to: 7.0
-Stable tag: 5.3.3
+Tested up to: 7.1
+Stable tag: 5.3.4
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -191,15 +191,16 @@ Check the FAQ tab in plugin settings first. If needed, enable log mode and send 
 
 == Changelog ==
 
-#####   Version 5.3.3 (2026-08-12)
+#####   Version 5.3.4 (2026-08-31)
 
-- Fixed an issue where the cache test could incorrectly report an error after updating the plugin because outdated files were still being served from the cache.
-- Clarified the dashboard label for cached objects to make clear that it refers to the disk page cache.
-- Fixed an issue where pages served from the server-level page cache were bypassed by Cloudflare instead of being cached.
-- Fixed an issue where the dashboard could show no cached objects even though cached pages were being tracked and listed.
-- Added the ability to download the complete list of cached page URLs from the dashboard as a text or CSV file.
-- Added support for defining Cloudflare API credentials as constants in wp-config.php.
-- Updated dependencies
+- Added a way to skip whole-cache purges after menu and theme changes.
+- Fixed REST optimization crashes for background selectors without image URLs.
+- Fixed large Cloudflare URL purges when multi-cURL support is unavailable.
+- Fixed pages losing critical styles before deferred stylesheets finish loading.
+- Fixed missing Google Fonts in the Gutenberg editor.
+- Fixed PDF downloads being stored in the page cache.
+- Update dependencies
+- Fixed disk cache becoming unavailable after a plugin update.
 
 
 

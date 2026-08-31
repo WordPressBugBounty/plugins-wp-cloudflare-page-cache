@@ -30,12 +30,12 @@ msgid "Andrei Baicus <andrei@themeisle.com>"
 msgstr ""
 
 #. translators: %s: Name of deactivated plugin
-#: bootstrap.php:285
+#: bootstrap.php:288
 #, php-format
 msgid "%s plugin deactivated."
 msgstr ""
 
-#: bootstrap.php:288
+#: bootstrap.php:291
 msgid "The Premium version of Super Page Cache for Cloudflare does not require the Free version."
 msgstr ""
 
@@ -398,19 +398,19 @@ msgstr ""
 msgid "Unknown"
 msgstr ""
 
-#: src/Modules/Cache_Controller.php:578
-#: src/Modules/Cache_Controller.php:600
-#: src/Modules/Cache_Controller.php:625
+#: src/Modules/Cache_Controller.php:710
+#: src/Modules/Cache_Controller.php:732
+#: src/Modules/Cache_Controller.php:757
 msgid "Permission denied"
 msgstr ""
 
-#: src/Modules/Cache_Controller.php:585
-#: src/Modules/Cache_Controller.php:607
-#: src/Modules/Cache_Controller.php:641
+#: src/Modules/Cache_Controller.php:717
+#: src/Modules/Cache_Controller.php:739
+#: src/Modules/Cache_Controller.php:773
 msgid "Cache purged. The change may take up to 30 seconds to fully propagate."
 msgstr ""
 
-#: src/Modules/Cache_Controller.php:635
+#: src/Modules/Cache_Controller.php:767
 msgid "An error occurred while cleaning the cache. Please check log file for further details."
 msgstr ""
 
@@ -639,202 +639,202 @@ msgstr ""
 msgid "Connection error while retrieving the sitemap %1$s: %2$s"
 msgstr ""
 
-#: src/Modules/Rest_Server.php:724
+#: src/Modules/Rest_Server.php:738
 msgid "Failed to purge cache. Please try again later."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:729
-#: src/Modules/Rest_Server.php:758
+#: src/Modules/Rest_Server.php:743
+#: src/Modules/Rest_Server.php:772
 msgid "Cache purge started. This may take a moment to complete."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:745
+#: src/Modules/Rest_Server.php:759
 msgid "Failed to purge Varnish cache. Please try again later."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:753
+#: src/Modules/Rest_Server.php:767
 msgid "An unknown error occurred while purging Varnish cache."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:777
+#: src/Modules/Rest_Server.php:791
 msgid "An error occurred while testing the cache: "
 msgstr ""
 
-#: src/Modules/Rest_Server.php:798
+#: src/Modules/Rest_Server.php:812
 msgid "Logs cleared successfully."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:801
+#: src/Modules/Rest_Server.php:815
 msgid "An error occurred while clearing logs: "
 msgstr ""
 
-#: src/Modules/Rest_Server.php:820
+#: src/Modules/Rest_Server.php:834
 msgid "Preloader is not enabled"
 msgstr ""
 
-#: src/Modules/Rest_Server.php:827
+#: src/Modules/Rest_Server.php:841
 msgid "Unable to start the preloader. Another preloading process is currently running."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:834
+#: src/Modules/Rest_Server.php:848
 msgid "You cannot start the preloader while the page cache is disabled."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:841
+#: src/Modules/Rest_Server.php:855
 msgid "Preloader started successfully"
 msgstr ""
 
-#: src/Modules/Rest_Server.php:924
+#: src/Modules/Rest_Server.php:938
 msgid "Settings reset completed with some errors: "
 msgstr ""
 
-#: src/Modules/Rest_Server.php:930
+#: src/Modules/Rest_Server.php:944
 msgid "Settings reset completed successfully."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:957
+#: src/Modules/Rest_Server.php:971
 msgid "Page cache enabled successfully"
 msgstr ""
 
-#: src/Modules/Rest_Server.php:969
+#: src/Modules/Rest_Server.php:983
 msgid "Page cache enabled successfully."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:989
+#: src/Modules/Rest_Server.php:1003
 msgid "Please refresh the page and try again."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1009
-#: src/Modules/Rest_Server.php:1024
+#: src/Modules/Rest_Server.php:1023
+#: src/Modules/Rest_Server.php:1038
 msgid "Activated"
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1024
+#: src/Modules/Rest_Server.php:1038
 msgid "Deactivated"
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1043
-#: src/Modules/Rest_Server.php:1052
-#: src/Modules/Rest_Server.php:1097
+#: src/Modules/Rest_Server.php:1057
+#: src/Modules/Rest_Server.php:1066
+#: src/Modules/Rest_Server.php:1111
 msgid "Invalid settings format provided."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1078
+#: src/Modules/Rest_Server.php:1092
 msgid "An error occurred while updating settings: "
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1103
+#: src/Modules/Rest_Server.php:1117
 msgid "Failed to import settings."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1156
-#: src/Modules/Rest_Server.php:1163
+#: src/Modules/Rest_Server.php:1170
+#: src/Modules/Rest_Server.php:1177
 msgid "Email and API Key are required for API Key authentication."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1172
-#: src/Modules/Rest_Server.php:1178
+#: src/Modules/Rest_Server.php:1186
+#: src/Modules/Rest_Server.php:1192
 msgid "API Token is required for API Token authentication."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1184
+#: src/Modules/Rest_Server.php:1198
 msgid "Invalid authentication mode provided."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1198
+#: src/Modules/Rest_Server.php:1212
 msgid "Cloudflare rejected the authentication headers. Verify your auth mode and credentials."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1202
+#: src/Modules/Rest_Server.php:1216
 msgid "Failed to connect to Cloudflare: "
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1254
+#: src/Modules/Rest_Server.php:1268
 msgid "Cloudflare connected successfully via API Key."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1255
+#: src/Modules/Rest_Server.php:1269
 msgid "Cloudflare connected successfully via API Token."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1261
+#: src/Modules/Rest_Server.php:1275
 msgid "An error occurred while connecting to Cloudflare: "
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1315
+#: src/Modules/Rest_Server.php:1329
 msgid "Disconnected from Cloudflare."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1361
+#: src/Modules/Rest_Server.php:1375
 msgid "Invalid response from Cloudflare."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1387
+#: src/Modules/Rest_Server.php:1401
 msgid "Cloudflare connected, but Edge Caching could not be enabled. Check your Cloudflare permissions and try again."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1394
+#: src/Modules/Rest_Server.php:1408
 msgid "Successfully connected to Cloudflare."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1449
+#: src/Modules/Rest_Server.php:1463
 msgid "An error occurred while optimizing the database:"
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1471
+#: src/Modules/Rest_Server.php:1485
 msgid "An error occurred while fetching database optimization counts:"
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1526
+#: src/Modules/Rest_Server.php:1540
 msgid "Failed to repair the Cloudflare rule."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1531
+#: src/Modules/Rest_Server.php:1545
 msgid "Cloudflare rule repaired successfully."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1552
+#: src/Modules/Rest_Server.php:1566
 msgid "Failed to dismiss notice."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1555
+#: src/Modules/Rest_Server.php:1569
 msgid "Notice dismissed successfully."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1577
-#: src/Modules/Rest_Server.php:1592
+#: src/Modules/Rest_Server.php:1591
+#: src/Modules/Rest_Server.php:1606
 msgid "No changes to save."
 msgstr ""
 
 #. translators: %d is the number of assets with saved rules.
-#: src/Modules/Rest_Server.php:1597
+#: src/Modules/Rest_Server.php:1611
 #, php-format
 msgid "Saved rules for %d assets."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1600
+#: src/Modules/Rest_Server.php:1614
 msgid "Saved rules for one asset."
 msgstr ""
 
 #. translators: %s: comma-separated settings keys.
-#: src/Modules/Rest_Server.php:1701
+#: src/Modules/Rest_Server.php:1715
 #, php-format
 msgid "These settings are managed by wp-config.php and cannot be changed here: %s"
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1715
+#: src/Modules/Rest_Server.php:1729
 msgid "Settings updated successfully."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1718
+#: src/Modules/Rest_Server.php:1732
 msgid "Settings updated successfully. Some wp-config.php managed settings were skipped."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1730
+#: src/Modules/Rest_Server.php:1744
 msgid "Settings imported successfully."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1733
+#: src/Modules/Rest_Server.php:1747
 msgid "Settings imported successfully. Some wp-config.php managed settings were skipped."
 msgstr ""
 
@@ -892,7 +892,7 @@ msgstr ""
 msgid "Unable to find domains configured on Cloudflare"
 msgstr ""
 
-#: src/Services/Cloudflare_Client.php:544
+#: src/Services/Cloudflare_Client.php:618
 msgid "Could not check token permissions. Invalid response from Cloudflare."
 msgstr ""
 

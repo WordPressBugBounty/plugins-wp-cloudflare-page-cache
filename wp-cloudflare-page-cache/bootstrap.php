@@ -21,7 +21,7 @@ if ( ! class_exists( 'SW_CLOUDFLARE_PAGECACHE' ) ) {
 	define( 'SWCFPC_PLUGIN_FORUM_URL', 'https://wordpress.org/support/plugin/wp-cloudflare-page-cache/' );
 	define( 'SWCFPC_AUTH_MODE_API_KEY', 0 );
 	define( 'SWCFPC_AUTH_MODE_API_TOKEN', 1 );
-	define( 'SWCFPC_VERSION', '5.3.3' );
+	define( 'SWCFPC_VERSION', '5.3.4' );
 	if ( ! defined( 'SPC_METRICS_DIR' ) ) {
 		$home_url_parts = parse_url( home_url() );
 		$home_url_host  = ! empty( $home_url_parts['host'] ) ? $home_url_parts['host'] : '';
@@ -188,8 +188,11 @@ if ( ! class_exists( 'SW_CLOUDFLARE_PAGECACHE' ) ) {
 				$handler        = $this->core_loader->fallback_cache();
 
 				if ( $cache_enabled && $fallback_cache && ! $curl_enabled ) {
-					$handler->fallback_cache_advanced_cache_disable();
+					// Enable replaces an outdated drop-in in place; disabling first
+					// would remove the working drop-in and flip WP_CACHE off before
+					// the replacement write is proven to succeed.
 					$handler->fallback_cache_advanced_cache_enable();
+					$handler->fallback_cache_purge_all();
 				} else {
 					// Stale drop-in exists but should not be active; remove it.
 					$handler->fallback_cache_advanced_cache_disable();

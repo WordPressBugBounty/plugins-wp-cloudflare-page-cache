@@ -38,7 +38,7 @@ class Bypass_Resolver {
 			return true;
 		}
 
-		if ( $settings->get( Constants::SETTING_BYPASS_SITEMAP, 0 ) > 0 && ( strcasecmp( $_SERVER['REQUEST_URI'], '/sitemap_index.xml' ) == 0 || preg_match( '/[a-zA-Z0-9]-sitemap.xml$/', $_SERVER['REQUEST_URI'] ) ) ) {
+		if ( $settings->get( Constants::SETTING_BYPASS_SITEMAP, 0 ) > 0 && Helpers::is_sitemap_request_uri( (string) $_SERVER['REQUEST_URI'] ) ) {
 			Helpers::bypass_reason_header( 'Sitemap' );
 			return true;
 		}

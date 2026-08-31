@@ -114,6 +114,10 @@ class HTML_Modifier implements Module_Interface {
 	/**
 	 * Minify the live frontend response body.
 	 *
+	 * Non-HTML responses (PDF downloads, feeds, JSON) pass through untouched: the
+	 * minifier would corrupt binary bodies and the output buffer is started before
+	 * the response type is known.
+	 *
 	 * @param string $html HTML content.
 	 *
 	 * @return string
@@ -123,7 +127,20 @@ class HTML_Modifier implements Module_Interface {
 			return $html;
 		}
 
+		if ( ! Helpers::is_cacheable_response_headers( $this->get_response_headers() ) ) {
+			return $html;
+		}
+
 		return ( new HTML_Minifier() )->minify( $html );
+	}
+
+	/**
+	 * Headers of the current response.
+	 *
+	 * @return array<int, string>
+	 */
+	protected function get_response_headers() {
+		return headers_list();
 	}
 
 	/**

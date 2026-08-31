@@ -391,16 +391,88 @@ class Cloudflare_Client extends Cloudflare_Rule {
 	}
 
 	/**
+	 * Check whether the cURL multi API is available.
+	 *
+	 * @return bool
+	 */
+	protected function has_curl_multi_support() {
+		if ( ! extension_loaded( 'curl' ) ) {
+			return false;
+		}
+
+		// Hosts may disable any of them individually.
+		$required = array(
+			'curl_init',
+			'curl_setopt_array',
+			'curl_close',
+			'curl_multi_init',
+			'curl_multi_add_handle',
+			'curl_multi_exec',
+			'curl_multi_select',
+			'curl_multi_getcontent',
+			'curl_multi_remove_handle',
+			'curl_multi_close',
+		);
+
+		foreach ( $required as $function ) {
+			if ( ! function_exists( $function ) ) { // @phpstan-ignore-line - function_exists() is a valid function to check for function existence.
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * Purge URL chunks sequentially through the WordPress HTTP API.
+	 *
+	 * Fallback for hosts where the cURL multi API is unavailable.
+	 *
+	 * @param array<int, array<int, string>> $chunks Chunks of URLs to purge.
+	 * @param string $error The error message.
+	 *
+	 * @return bool
+	 */
+	private function purge_cache_url_chunks( $chunks, &$error = '' ) {
+		$url            = sprintf( 'https://api.cloudflare.com/client/v4/zones/%s/purge_cache', $this->settings_store->get_cloudflare_zone_id() );
+		$args           = $this->get_api_auth_args();
+		$args['method'] = 'POST';
+		$success        = true;
+
+		foreach ( $chunks as $index => $single_chunk ) {
+			$args['body'] = json_encode( [ 'files' => array_values( $single_chunk ) ] );
+
+			$this->log( 'purge_cache_url_chunks', sprintf( 'Request %d body: %s', $index, $args['body'] ) );
+
+			$response = wp_remote_post( $url, $args );
+
+			if ( ! $this->is_success_api_response( $response, 'purge_cache_url_chunks', $error ) ) {
+				$success = false;
+			}
+		}
+
+		return $success;
+	}
+
+	/**
 	 * Purge URLs from Cloudflare cache asynchronously.
 	 *
 	 * @param array $urls URLs to purge.
+	 * @param string $error The error message.
 	 *
-	 * @return true
+	 * @return bool
 	 */
-	public function purge_cache_urls_async( $urls ) {
+	public function purge_cache_urls_async( $urls, &$error = '' ) {
+		$chunks = array_chunk( $urls, 30 );
+
+		if ( ! $this->has_curl_multi_support() ) {
+			$this->log( 'purge_cache_urls_async', 'cURL multi API unavailable, purging sequentially instead' );
+
+			return $this->purge_cache_url_chunks( $chunks, $error );
+		}
+
 		$args = $this->get_api_auth_args( true );
 
-		$chunks     = array_chunk( $urls, 30 );
 		$multi_curl = curl_multi_init();
 		$curl_array = [];
 		$curl_index = 0;
@@ -469,7 +541,9 @@ class Cloudflare_Client extends Cloudflare_Rule {
 		do_action( 'swcfpc_cf_purge_cache_by_urls_before', $urls );
 
 		if ( count( $urls ) > 30 ) {
-			$this->purge_cache_urls_async( $urls );
+			if ( ! $this->purge_cache_urls_async( $urls, $error ) ) {
+				return false;
+			}
 		} else {
 			$url            = sprintf( 'https://api.cloudflare.com/client/v4/zones/%s/purge_cache', $this->settings_store->get_cloudflare_zone_id() );
 			$args           = $this->get_api_auth_args();

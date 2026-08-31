@@ -144,11 +144,6 @@ class Fallback_Cache implements Module_Interface {
 
 			$advanced_cache_source = SWCFPC_PLUGIN_PATH . 'assets/advanced-cache.php';
 
-			if ( file_exists( $advanced_cache_dest ) && ! @unlink( $advanced_cache_dest ) ) {
-				Logger::log( 'fallback_cache::fallback_cache_advanced_cache_enable', 'Unable to remove the old advanced-cache.php from wp-content directory' );
-				return false;
-			}
-
 			$source_content = file_get_contents( $advanced_cache_source );
 			if ( false === $source_content ) {
 				Logger::log( 'fallback_cache::fallback_cache_advanced_cache_enable', 'Unable to read advanced-cache.php source' );
@@ -157,8 +152,23 @@ class Fallback_Cache implements Module_Interface {
 
 			$source_content = str_replace( "'SWCFPC_VERSION_PLACEHOLDER'", "'" . SWCFPC_VERSION . "'", $source_content );
 
-			if ( file_put_contents( $advanced_cache_dest, $source_content ) === false ) {
-				Logger::log( 'fallback_cache::fallback_cache_advanced_cache_enable', 'Unable to copy advanced-cache.php to wp-content directory' );
+			// Stage the new drop-in and swap it in with a rename, so a failed
+			// write can never leave the site without a working drop-in. The
+			// temp name is per-process so concurrent requests cannot truncate
+			// each other's staged copy, and the byte count is verified because
+			// file_put_contents() reports a partial write (disk full) as a
+			// count, not as false.
+			$advanced_cache_temp = $advanced_cache_dest . '.' . getmypid() . '.swcfpc-tmp';
+
+			if ( file_put_contents( $advanced_cache_temp, $source_content ) !== strlen( $source_content ) ) {
+				@unlink( $advanced_cache_temp );
+				Logger::log( 'fallback_cache::fallback_cache_advanced_cache_enable', 'Unable to write the new advanced-cache.php to the wp-content directory' );
+				return false;
+			}
+
+			if ( ! @rename( $advanced_cache_temp, $advanced_cache_dest ) ) {
+				@unlink( $advanced_cache_temp );
+				Logger::log( 'fallback_cache::fallback_cache_advanced_cache_enable', 'Unable to move the new advanced-cache.php into place' );
 				return false;
 			}
 
@@ -428,6 +438,10 @@ class Fallback_Cache implements Module_Interface {
 			return;
 		}
 
+		if ( ! Helpers::is_cacheable_response_headers( wp_remote_retrieve_headers( $response ) ) ) {
+			return;
+		}
+
 		$metadata = $this->build_cache_entry_metadata();
 
 		$body = wp_remote_retrieve_body( $response );
@@ -457,6 +471,11 @@ class Fallback_Cache implements Module_Interface {
 		$captured_response_body = ob_get_level() > 0 ? ob_get_clean() : '';
 
 		if ( ! is_string( $captured_response_body ) || '' === $captured_response_body ) {
+			$this->release_refresh_lock( $cache_key, $cache_path );
+			return;
+		}
+
+		if ( ! Helpers::is_cacheable_response_headers() ) {
 			$this->release_refresh_lock( $cache_key, $cache_path );
 			return;
 		}

@@ -42,6 +42,290 @@ class Helpers {
 	}
 
 	/**
+	 * Media types that page caches may store verbatim.
+	 *
+	 * @var string[]
+	 */
+	private const HTML_MEDIA_TYPES = [ 'text/html', 'application/xhtml+xml' ];
+
+	/**
+	 * Media types of the non-HTML public documents WordPress serves: feeds, XML sitemaps
+	 * and robots.txt. Only honoured on requests WordPress identifies as one of those.
+	 *
+	 * @var string[]
+	 */
+	private const PUBLIC_DOCUMENT_MEDIA_TYPES = [
+		'application/rss+xml',
+		'application/atom+xml',
+		'application/rdf+xml',
+		'application/xml',
+		'text/xml',
+		'text/plain',
+	];
+
+	/**
+	 * Check whether response headers describe a response that page caches may store.
+	 *
+	 * HTML is always acceptable. Non-HTML public documents (feeds, sitemaps, robots.txt)
+	 * are only acceptable when the caller confirms WordPress is serving one of those —
+	 * see {@see self::is_public_document_request()} — because the disk cache replays
+	 * bodies as text/html, the minifier mutates them, and a custom `text/plain` or XML
+	 * endpoint may carry user-specific data. Binary responses, exports and attachments
+	 * are never cacheable.
+	 *
+	 * Responses without an explicit content type are allowed because WordPress
+	 * themes commonly rely on the web server's default HTML content type.
+	 *
+	 * @param array<string|int, mixed>|object|null $headers                Response headers. Defaults to the current response.
+	 * @param bool                                 $allow_public_documents Accept the public-document media types as well.
+	 *
+	 * @return bool
+	 */
+	public static function is_cacheable_response_headers( $headers = null, bool $allow_public_documents = false ) {
+		foreach ( self::normalize_headers( $headers ) as [ $name, $value ] ) {
+			if ( 'content-disposition' === $name && 'attachment' === self::header_token( $value ) ) {
+				return false;
+			}
+
+			if ( 'content-type' === $name && ! self::is_cacheable_media_type( self::header_token( $value ), $allow_public_documents ) ) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * Media types that identify a file download or export rather than a web document:
+	 * PDFs, archives, office documents, CSV/TSV exports and the generic binary types used
+	 * by `readfile()` handlers. Matched exactly, or by prefix when the entry ends in `/`
+	 * or `.`.
+	 *
+	 * @var string[]
+	 */
+	private const DOWNLOAD_MEDIA_TYPES = [
+		'application/pdf',
+		'application/octet-stream',
+		'application/download',
+		'application/x-download',
+		'application/force-download',
+		'application/zip',
+		'application/x-zip-compressed',
+		'application/gzip',
+		'application/x-gzip',
+		'application/x-tar',
+		'application/x-7z-compressed',
+		'application/x-rar-compressed',
+		'application/vnd.rar',
+		'application/msword',
+		'application/vnd.ms-excel',
+		'application/vnd.ms-powerpoint',
+		'application/vnd.openxmlformats-officedocument.',
+		'application/vnd.oasis.opendocument.',
+		'application/rtf',
+		'application/epub+zip',
+		'text/csv',
+		'application/csv',
+		'text/tab-separated-values',
+	];
+
+	/**
+	 * Check whether response headers describe a file download: an `attachment`
+	 * disposition, or one of {@see self::DOWNLOAD_MEDIA_TYPES}.
+	 *
+	 * Deliberately a deny-list. It is used on responses the plugin did not promote
+	 * itself (a handler that exited before `template_redirect`), where everything that
+	 * is not recognisably a download must keep whatever headers it had.
+	 *
+	 * @param array<string|int, mixed>|object|null $headers Response headers. Defaults to the current response.
+	 *
+	 * @return bool
+	 */
+	public static function is_download_response( $headers = null ): bool {
+		/**
+		 * Filter the media types treated as file downloads on cache-eligible URLs.
+		 *
+		 * @param string[] $media_types Lower-cased media types; a trailing `/` or `.` matches by prefix.
+		 */
+		$download_types = apply_filters( 'swcfpc_download_media_types', self::DOWNLOAD_MEDIA_TYPES );
+		$download_types = is_array( $download_types ) ? array_map( 'strtolower', $download_types ) : [];
+
+		foreach ( self::normalize_headers( $headers ) as [ $name, $value ] ) {
+			if ( 'content-disposition' === $name && 'attachment' === self::header_token( $value ) ) {
+				return true;
+			}
+
+			if ( 'content-type' !== $name ) {
+				continue;
+			}
+
+			$media_type = self::header_token( $value );
+
+			foreach ( $download_types as $download_type ) {
+				$is_prefix = in_array( substr( $download_type, -1 ), [ '/', '.' ], true );
+
+				if ( $media_type === $download_type || ( $is_prefix && strpos( $media_type, $download_type ) === 0 ) ) {
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Flatten response headers into lower-cased `[ name, value ]` pairs.
+	 *
+	 * Accepts `headers_list()` output (`Name: value` strings), associative arrays with
+	 * string or array values, and Requests' `CaseInsensitiveDictionary`.
+	 *
+	 * @param array<string|int, mixed>|object|null $headers Response headers. Defaults to the current response.
+	 *
+	 * @return array<int, array{string, string}>
+	 */
+	private static function normalize_headers( $headers ): array {
+		if ( null === $headers ) {
+			$headers = headers_list();
+		}
+
+		if ( is_object( $headers ) && method_exists( $headers, 'getAll' ) ) {
+			$headers = $headers->getAll();
+		}
+
+		if ( ! is_array( $headers ) && ! $headers instanceof \Traversable ) {
+			return [];
+		}
+
+		$pairs = [];
+
+		foreach ( $headers as $name => $value ) {
+			if ( is_int( $name ) ) {
+				$parts = explode( ':', (string) $value, 2 );
+
+				if ( count( $parts ) !== 2 ) {
+					continue;
+				}
+
+				[ $name, $value ] = $parts;
+			}
+
+			$name = strtolower( trim( (string) $name ) );
+
+			foreach ( is_array( $value ) ? $value : [ $value ] as $single_value ) {
+				$pairs[] = [ $name, trim( (string) $single_value ) ];
+			}
+		}
+
+		return $pairs;
+	}
+
+	/**
+	 * First token of a header value, lower-cased: the media type of a Content-Type, the
+	 * disposition type of a Content-Disposition.
+	 *
+	 * @param string $value Header value.
+	 *
+	 * @return string
+	 */
+	private static function header_token( string $value ): string {
+		return strtolower( trim( explode( ';', $value, 2 )[0] ) );
+	}
+
+	/**
+	 * Whether the response declares its own freshness lifetime: a `Cache-Control` header
+	 * with a positive `max-age` or `s-maxage`.
+	 *
+	 * Used to tell an explicit third-party caching policy (a plugin serving dynamic CSS
+	 * with `public, max-age=300`) apart from the absence of one, which Cloudflare would
+	 * resolve to its default edge TTL. Only the former is honoured on responses the
+	 * plugin did not promote itself.
+	 *
+	 * @param array<string|int, mixed>|object|null $headers Response headers. Defaults to the current response.
+	 *
+	 * @return bool
+	 */
+	public static function response_declares_cache_lifetime( $headers = null ): bool {
+		foreach ( self::normalize_headers( $headers ) as [ $name, $value ] ) {
+			if ( 'cache-control' !== $name || ! preg_match_all( '/(?:^|[\\s,])(?:s-)?max-?age\\s*=\\s*"?(\\d+)/i', $value, $matches ) ) {
+				continue;
+			}
+
+			foreach ( $matches[1] as $seconds ) {
+				if ( (int) $seconds > 0 ) {
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Whether WordPress is serving a public, non-HTML document on this request:
+	 * a feed, an XML sitemap (core or third-party such as Yoast) or robots.txt.
+	 *
+	 * Safe to call at any point of the request: before the main query has run the
+	 * conditionals are all false, and third-party sitemaps are matched on the URL.
+	 *
+	 * @return bool
+	 */
+	public static function is_public_document_request(): bool {
+		$wp_query = $GLOBALS['wp_query'] ?? null;
+
+		if ( $wp_query instanceof \WP_Query && ( $wp_query->is_feed() || $wp_query->is_robots() ) ) {
+			return true;
+		}
+
+		// Core sitemaps (`/wp-sitemap.xml`, `/wp-sitemap-posts-post-1.xml`, `/wp-sitemap.xsl`) have no
+		// conditional tag; WP_Sitemaps identifies them by query var.
+		if ( $wp_query instanceof \WP_Query && ( '' !== (string) $wp_query->get( 'sitemap' ) || '' !== (string) $wp_query->get( 'sitemap-stylesheet' ) ) ) {
+			return true;
+		}
+
+		return self::is_sitemap_request_uri( $_SERVER['REQUEST_URI'] ?? '' );
+	}
+
+	/**
+	 * Whether a request URI points at an XML sitemap (`/sitemap_index.xml`, `/post-sitemap.xml`, ...).
+	 *
+	 * @param string $request_uri Request URI.
+	 *
+	 * @return bool
+	 */
+	public static function is_sitemap_request_uri( string $request_uri ): bool {
+		$path = (string) parse_url( $request_uri, PHP_URL_PATH );
+
+		return strcasecmp( $path, '/sitemap_index.xml' ) === 0 || (bool) preg_match( '/[a-zA-Z0-9]-sitemap\.xml$/', $path );
+	}
+
+	/**
+	 * Check whether a media type may be stored by page caches.
+	 *
+	 * @param string $media_type             Lower-cased media type without parameters.
+	 * @param bool   $allow_public_documents Accept the public-document media types as well.
+	 *
+	 * @return bool
+	 */
+	private static function is_cacheable_media_type( string $media_type, bool $allow_public_documents ): bool {
+		if ( in_array( $media_type, self::HTML_MEDIA_TYPES, true ) ) {
+			return true;
+		}
+
+		if ( ! $allow_public_documents ) {
+			return false;
+		}
+
+		/**
+		 * Filter the non-HTML media types Cloudflare may cache on cache-eligible URLs.
+		 *
+		 * @param string[] $media_types Lower-cased media types without parameters.
+		 */
+		$media_types = apply_filters( 'swcfpc_cacheable_media_types', self::PUBLIC_DOCUMENT_MEDIA_TYPES );
+
+		return is_array( $media_types ) && in_array( $media_type, array_map( 'strtolower', $media_types ), true );
+	}
+
+	/**
 	 * Get the second level domain of the site.
 	 *
 	 * @return string

@@ -482,6 +482,11 @@ class Rest_Server implements Module_Interface {
 		if ( empty( $device_type ) || empty( $url ) || ! is_array( $above_fold_images ) ) {
 			return $this->message_response( 'Missing required parameters', 400 );
 		}
+		$bg_selectors = empty( $bg_selectors ) ? [] : $bg_selectors;
+		$lcp_data     = empty( $lcp_data ) ? [] : $lcp_data;
+		if ( ! is_array( $bg_selectors ) || ! is_array( $lcp_data ) ) {
+			return $this->message_response( 'Invalid optimization parameters', 400 );
+		}
 		if ( count( $above_fold_images ) > 20 ) {
 			return $this->message_response( 'Above fold images limit exceeded', 400 );
 		}
@@ -497,7 +502,7 @@ class Rest_Server implements Module_Interface {
 		$current_selectors             = array_values( $lazyload_background_selectors );
 		$sanitized_selectors           = [];
 		foreach ( $bg_selectors as $selector => $above_fold_bg_selectors ) {
-			if ( ! in_array( $selector, $current_selectors, true ) ) {
+			if ( ! in_array( $selector, $current_selectors, true ) || ! is_array( $above_fold_bg_selectors ) ) {
 				return $this->message_response( 'Invalid background selector', 400 );
 			}
 			if ( count( $above_fold_bg_selectors ) > 100 ) {
@@ -506,6 +511,10 @@ class Rest_Server implements Module_Interface {
 			$selector                         = strip_tags( $selector );
 			$sanitized_selectors[ $selector ] = [];
 			foreach ( $above_fold_bg_selectors as $above_fold_bg_selector => $bg_urls ) {
+				$bg_urls = empty( $bg_urls ) ? [] : $bg_urls;
+				if ( ! is_array( $bg_urls ) || count( $bg_urls ) !== count( array_filter( $bg_urls, 'is_string' ) ) ) {
+					return $this->message_response( 'Invalid background selector', 400 );
+				}
 				if ( count( $bg_urls ) > 3 ) {
 					return $this->message_response( 'Background URLs limit exceeded', 400 );
 				}
@@ -518,11 +527,16 @@ class Rest_Server implements Module_Interface {
 		if ( ! empty( $lcp_data ) ) {
 			$sanitized_lcp_data['imageId']    = sanitize_text_field( $lcp_data['i'] ?? '' );
 			$sanitized_lcp_data['bgSelector'] = sanitize_text_field( $lcp_data['s'] ?? '' );
-			if ( count( $lcp_data['u'] ?? [] ) > 3 ) {
+			$lcp_bg_urls                      = $lcp_data['u'] ?? [];
+			$lcp_bg_urls                      = empty( $lcp_bg_urls ) ? [] : $lcp_bg_urls;
+			if ( ! is_array( $lcp_bg_urls ) || count( $lcp_bg_urls ) !== count( array_filter( $lcp_bg_urls, 'is_string' ) ) ) {
+				return $this->message_response( 'Invalid optimization parameters', 400 );
+			}
+			if ( count( $lcp_bg_urls ) > 3 ) {
 				return $this->message_response( 'LCP Background URLs limit exceeded', 400 );
 			}
 			$sanitized_lcp_data['bgUrls'] = array_filter(
-				array_map( 'sanitize_url', array_values( $lcp_data['u'] ?? [] ) )
+				array_map( 'sanitize_url', array_values( $lcp_bg_urls ) )
 			);
 			$sanitized_lcp_data['type']   = empty( $sanitized_lcp_data['imageId'] ) ? 'bg' : 'img';
 		}

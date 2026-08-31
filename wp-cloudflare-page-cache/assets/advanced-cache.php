@@ -245,6 +245,14 @@ function swcfpc_fallback_cache_end( $html ) {
 				return $html;
 			}
 
+			if ( ! \SPC\Utils\Helpers::is_cacheable_response_headers() ) {
+				if ( swcfpc_is_fallback_refresh_request() ) {
+					swcfpc_release_refresh_lock( $cache_key, $cache_path );
+				}
+
+				return $html;
+			}
+
 			$metadata = swcfpc_build_cache_entry_metadata( $swcfpc_config );
 
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {

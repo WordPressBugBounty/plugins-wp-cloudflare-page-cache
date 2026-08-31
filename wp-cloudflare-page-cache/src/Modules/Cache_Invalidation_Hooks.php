@@ -274,6 +274,14 @@ class Cache_Invalidation_Hooks implements Module_Interface {
 	}
 
 	/**
+	 * Purge the whole cache after a site-wide (theme-level) change: menu save, theme mods /
+	 * customizer save, theme switch, permalink structure change, Avada dynamic CSS flush.
+	 *
+	 * These changes affect every page, so a whole-cache purge is the default even when the
+	 * "related pages only" auto-purge mode is enabled. Sites where that is too expensive
+	 * (e.g. very large catalogues) can opt out per action through the
+	 * `swcfpc_purge_cache_on_theme_edit` filter.
+	 *
 	 * @return void
 	 */
 	public function purge_cache_on_theme_edit() {
@@ -285,6 +293,24 @@ class Cache_Invalidation_Hooks implements Module_Interface {
 		}
 
 		$current_action = function_exists( 'current_action' ) ? current_action() : '';
+
+		/**
+		 * Filters whether a theme-level change should purge the whole cache.
+		 *
+		 * @param bool   $should_purge     Whether to purge the whole cache. Default true.
+		 * @param string $current_action   The WordPress action that triggered the purge
+		 *                                 (e.g. `wp_update_nav_menu`, `customize_save_after`,
+		 *                                 `switch_theme`, `permalink_structure_changed`).
+		 * @param bool   $auto_purge_whole Whether the "purge whole cache" auto-purge mode is
+		 *                                 enabled. Return this value to only purge everything
+		 *                                 when that mode is on.
+		 */
+		$should_purge = apply_filters( 'swcfpc_purge_cache_on_theme_edit', true, $current_action, $auto_purge_whole );
+
+		if ( ! $should_purge ) {
+			Logger::log( 'cache_invalidation_hooks::purge_cache_on_theme_edit', "Whole cache purge skipped by filter - Fired action: {$current_action}" );
+			return;
+		}
 
 		Cache_Controller::purge_all();
 		Logger::log( 'cache_invalidation_hooks::purge_cache_on_theme_edit', "Purge whole cache - Fired action: {$current_action}" );

@@ -1,3 +1,14 @@
+#####   Version 5.3.4 (2026-08-31)
+
+- Added a way to skip whole-cache purges after menu and theme changes.
+- Fixed REST optimization crashes for background selectors without image URLs.
+- Fixed large Cloudflare URL purges when multi-cURL support is unavailable.
+- Fixed pages losing critical styles before deferred stylesheets finish loading.
+- Fixed missing Google Fonts in the Gutenberg editor.
+- Fixed PDF downloads being stored in the page cache.
+- Update dependencies
+- Fixed disk cache becoming unavailable after a plugin update.
+
 #####   Version 5.3.3 (2026-08-12)
 
 - Fixed an issue where the cache test could incorrectly report an error after updating the plugin because outdated files were still being served from the cache.

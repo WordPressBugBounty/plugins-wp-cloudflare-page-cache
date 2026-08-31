@@ -101,6 +101,12 @@ class Font_Optimizer implements Module_Interface {
 	 * @return string|false
 	 */
 	public function capture_google_fonts( $src, $handle ) {
+		// The optimized replacement is emitted in the frontend document head only.
+		// Keep editor and other admin stylesheets intact.
+		if ( is_admin() ) {
+			return $src;
+		}
+
 		if ( ! Google_Font::is_google_font_url( $src ) ) {
 			return $src;
 		}

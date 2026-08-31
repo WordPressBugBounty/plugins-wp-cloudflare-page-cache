@@ -26,6 +26,17 @@ class Cache_Controller implements Module_Interface {
 	private bool $skip_cache             = false;
 	private bool $purge_all_already_done = false;
 
+	/**
+	 * Whether the pre-send header guard was registered with `header_register_callback()`.
+	 */
+	private bool $header_guard_registered = false;
+
+	/**
+	 * Whether `apply_cache()` promoted this response to cacheable (sent the configured
+	 * Cache-Control). Distinguishes the plugin's own headers from a third party's.
+	 */
+	private bool $cache_applied = false;
+
 	public function init() {
 		// Purge cache cronjob
 		add_action( 'swcfpc_cache_purge_cron', [ Purge_Queue::class, 'process_queue' ] );
@@ -63,8 +74,8 @@ class Cache_Controller implements Module_Interface {
 			if ( ! Settings_Store::get_instance()->is_cache_enabled() ) {
 				add_filter(
 					'nocache_headers',
-					static function () {
-						return [ 'X-WP-CF-Super-Cache' => 'disabled' ];
+					static function ( $headers ) {
+						return array_merge( (array) $headers, [ 'X-WP-CF-Super-Cache' => 'disabled' ] );
 					},
 					PHP_INT_MAX
 				);
@@ -93,8 +104,8 @@ class Cache_Controller implements Module_Interface {
 
 			add_filter(
 				'nocache_headers',
-				static function () {
-					return [ 'X-WP-CF-Super-Cache' => 'disabled' ];
+				static function ( $headers ) {
+					return array_merge( (array) $headers, [ 'X-WP-CF-Super-Cache' => 'disabled' ] );
 				},
 				PHP_INT_MAX
 			);
@@ -126,19 +137,11 @@ class Cache_Controller implements Module_Interface {
 		Loader::get()->fallback_cache()->fallback_cache_enable();
 		Loader::get()->html_cache()->cache_current_page();
 
-		$cache_control = Settings_Store::get_instance()->get_cache_control_value();
-		add_filter(
-			'nocache_headers',
-			static function () use ( $cache_control ) {
-				return [
-					'Cache-Control'                     => $cache_control,
-					'X-WP-CF-Super-Cache-Cache-Control' => $cache_control,
-					'X-WP-CF-Super-Cache-Active'        => '1',
-					'X-WP-CF-Super-Cache'               => 'cache',
-				];
-			},
-			PHP_INT_MAX
-		);
+		// Deliberately no `nocache_headers` override for cacheable requests: `apply_cache()` asserts
+		// the cacheable headers for rendered templates, so any `nocache_headers()` call before that
+		// point comes from a third party that genuinely wants to stay uncached (PDF invoices, file
+		// downloads hooked on `init`). Overriding it is how #678 happened.
+		$this->register_response_header_guard();
 	}
 
 	/**
@@ -169,6 +172,7 @@ class Cache_Controller implements Module_Interface {
 			header( 'Pragma: no-cache' );
 			header( 'Expires: ' . gmdate( 'D, d M Y H:i:s \G\M\T', time() ) );
 			header( 'X-WP-SPC-Disk-Cache: BYPASS' );
+			header( 'X-WP-CF-Super-Cache: no-cache' );
 			header( 'X-WP-CF-Super-Cache-Cache-Control: no-store, no-cache, must-revalidate, max-age=0' );
 			$this->skip_cache = true;
 			Loader::get()->fallback_cache()->fallback_cache_disable();
@@ -178,6 +182,75 @@ class Cache_Controller implements Module_Interface {
 
 		Loader::get()->fallback_cache()->fallback_cache_enable();
 		Loader::get()->html_cache()->cache_current_page();
+	}
+
+	/**
+	 * Run the non-HTML guard immediately before PHP flushes the response headers.
+	 *
+	 * Registered at `init` for every request that is not bypassed, so it also sees
+	 * responses produced before `template_redirect` (a PDF invoice streamed on `init`)
+	 * and after `apply_cache()` has promoted the response (a PDF produced from inside a
+	 * template, when no output buffer is active — by `shutdown` its headers are long
+	 * gone). The header callback is the last moment at which they can still be changed.
+	 *
+	 * The guard only ever demotes. On a response the plugin promoted itself it requires an
+	 * HTML (or WordPress public document) body; on a response that ended before
+	 * `template_redirect` it only steps in for file downloads, so sitemaps, feeds,
+	 * redirects and custom endpoints keep the behaviour of previous versions.
+	 * See {@see self::guard_response_headers_before_send()}.
+	 *
+	 * PHP keeps a single callback and offers no way to chain: registering replaces any
+	 * other plugin's callback, and a plugin registering later replaces this guard. If that
+	 * happens, early downloads simply keep the headers they had before this guard
+	 * existed — never more cacheable than that.
+	 *
+	 * Never registered under the CLI SAPI (WP-CLI, cron run via `php wp-cron.php`): there
+	 * are no headers to guard, and PHP frees an unconsumed callback during SAPI teardown
+	 * after the executor is gone, which segfaults commands that produce no output.
+	 *
+	 * @return void
+	 */
+	private function register_response_header_guard() {
+		if (
+			$this->header_guard_registered
+			|| headers_sent()
+			|| in_array( PHP_SAPI, [ 'cli', 'phpdbg' ], true )
+			|| ! function_exists( 'header_register_callback' )
+		) {
+			return;
+		}
+
+		$this->header_guard_registered = header_register_callback( [ $this, 'guard_response_headers_before_send' ] );
+	}
+
+	/**
+	 * `header_register_callback()` entry point.
+	 *
+	 * @return void
+	 */
+	public function guard_response_headers_before_send() {
+		if ( $this->cache_applied ) {
+			// The plugin put its own cacheable headers on this response: make sure the body
+			// that is actually going out is HTML (or a public document WordPress serves).
+			$this->bypass_cache_for_non_html_response();
+			return;
+		}
+
+		// The response ended before `apply_cache()`: the plugin never touched its headers and,
+		// apart from file downloads, it must not start now — sitemaps, feeds, redirects, JSON or
+		// JS endpoints keep whatever headers they had in previous versions. A download that
+		// declares its own lifetime (`Cache-Control: public, max-age=300`) is also left alone.
+		if (
+			is_admin()
+			|| headers_sent()
+			|| ! Settings_Store::get_instance()->is_cache_enabled()
+			|| Helpers::response_declares_cache_lifetime()
+			|| ! Helpers::is_download_response()
+		) {
+			return;
+		}
+
+		$this->demote_response_to_bypass( 'File download' );
 	}
 
 	/**
@@ -207,11 +280,19 @@ class Cache_Controller implements Module_Interface {
 			header( 'Pragma: no-cache' );
 			header( 'Expires: ' . gmdate( 'D, d M Y H:i:s \G\M\T', time() ) );
 			header( 'X-WP-SPC-Disk-Cache: BYPASS' );
+			header( 'X-WP-CF-Super-Cache: no-cache' );
 			header( 'X-WP-CF-Super-Cache-Cache-Control: no-store, no-cache, must-revalidate, max-age=0' );
 			Loader::get()->fallback_cache()->fallback_cache_disable();
 			Loader::get()->html_cache()->do_not_cache_current_page();
 			return;
 		}
+
+		if ( $this->bypass_cache_for_non_html_response() ) {
+			return;
+		}
+
+		// Normally already registered at `init`; a no-op then.
+		$this->register_response_header_guard();
 
 		if ( $settings->get( Constants::SETTING_STRIP_RESPONSE_COOKIES, 0 ) > 0 ) {
 			header_remove( 'Set-Cookie' );
@@ -229,10 +310,61 @@ class Cache_Controller implements Module_Interface {
 
 		header( 'X-WP-SPC-Disk-Cache: ' . $status );
 		header( 'X-WP-CF-Super-Cache-Active: 1' );
+		header( 'X-WP-CF-Super-Cache: cache' );
 		header( 'X-WP-CF-Super-Cache-Cache-Control: ' . $settings->get_cache_control_value() );
+
+		$this->cache_applied = true;
 
 		Loader::get()->fallback_cache()->fallback_cache_enable();
 		Loader::get()->html_cache()->cache_current_page();
+	}
+
+	/**
+	 * Prevent non-HTML and attachment responses from entering page caches.
+	 *
+	 * Runs when `apply_cache()` would promote the response (headers set before
+	 * `template_redirect`) and again from the `header_register_callback()` guard
+	 * immediately before the headers are flushed (headers set while rendering).
+	 * Feeds, sitemaps and robots.txt keep their Cloudflare headers only when WordPress
+	 * itself is serving them; the same media types on any other URL are bypassed.
+	 *
+	 * @return bool Whether the response was changed to a cache bypass.
+	 */
+	private function bypass_cache_for_non_html_response() {
+		if (
+			is_admin()
+			|| headers_sent()
+			|| ! Settings_Store::get_instance()->is_cache_enabled()
+			|| Helpers::is_cacheable_response_headers( null, Helpers::is_public_document_request() )
+		) {
+			return false;
+		}
+
+		$this->demote_response_to_bypass( 'Non-HTML response' );
+
+		return true;
+	}
+
+	/**
+	 * Replace the response's cache headers with a bypass and keep it out of the page caches.
+	 *
+	 * @param string $reason Bypass reason, used when none was recorded yet.
+	 *
+	 * @return void
+	 */
+	private function demote_response_to_bypass( string $reason ) {
+		header_remove( 'X-WP-CF-Super-Cache-Active' );
+		header( 'X-WP-CF-Super-Cache: no-cache' );
+		header( 'Cache-Control: no-store, no-cache, must-revalidate, max-age=0' );
+		header( 'X-WP-SPC-Disk-Cache: BYPASS' );
+		header( 'X-WP-CF-Super-Cache-Cache-Control: no-store, no-cache, must-revalidate, max-age=0' );
+
+		if ( ! Helpers::has_cache_bypass_reason_header() ) {
+			Helpers::bypass_reason_header( $reason );
+		}
+
+		Loader::get()->fallback_cache()->fallback_cache_disable();
+		Loader::get()->html_cache()->do_not_cache_current_page();
 	}
 
 	/**
