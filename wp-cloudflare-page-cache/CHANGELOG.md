@@ -1,3 +1,13 @@
+#####   Version 5.3.5 (2026-09-07)
+
+- Fixed cache exclusions for exact file paths.
+- Fixed crashes when older cache drop-in files remain after plugin updates.
+- Fixed doctor checks for missing, old, or disabled disk cache files.
+- Fixed missing administrator warnings when the disk cache cannot be activated.
+- Fixed filtered pages remaining cached after the disk cache rejected their URLs.
+- Fixed fallback cache serving query page content from clean page URLs.
+- Fixed update errors on unsupported WordPress versions.
+
 #####   Version 5.3.4 (2026-08-31)
 
 - Added a way to skip whole-cache purges after menu and theme changes.

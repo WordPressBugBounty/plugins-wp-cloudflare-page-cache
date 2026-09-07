@@ -180,13 +180,7 @@ class Controller {
 	 * Show a dashboard notice that migration is in progress.
 	 */
 	public function display_migration_notice() {
-		wp_admin_notice(
-			__( 'Action Scheduler migration in progress. The list of scheduled actions may be incomplete.', 'action-scheduler' ),
-			array(
-				'type'           => 'warning',
-				'paragraph_wrap' => true,
-			)
-		);
+		printf( '<div class="notice notice-warning"><p>%s</p></div>', esc_html__( 'Action Scheduler migration in progress. The list of scheduled actions may be incomplete.', 'action-scheduler' ) );
 	}
 
 	/**

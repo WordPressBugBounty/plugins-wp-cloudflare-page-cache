@@ -44,104 +44,104 @@ msgstr ""
 #: libs/wpcli/class-base.php:214
 #: libs/wpcli/class-base.php:225
 #: libs/wpcli/class-base.php:236
-#: src/Modules/WP_CLI.php:188
-#: src/Modules/WP_CLI.php:206
-#: src/Modules/WP_CLI.php:223
-#: src/Modules/WP_CLI.php:234
-#: src/Modules/WP_CLI.php:247
+#: src/Modules/WP_CLI.php:280
+#: src/Modules/WP_CLI.php:298
+#: src/Modules/WP_CLI.php:315
+#: src/Modules/WP_CLI.php:326
+#: src/Modules/WP_CLI.php:339
 msgid "Cache purged successfully."
 msgstr ""
 
 #: libs/wpcli/class-base.php:183
-#: src/Modules/WP_CLI.php:190
+#: src/Modules/WP_CLI.php:282
 msgid "An error occurred while purging the cache"
 msgstr ""
 
 #: libs/wpcli/class-base.php:251
-#: src/Modules/WP_CLI.php:262
+#: src/Modules/WP_CLI.php:354
 msgid "Cache enabled successfully"
 msgstr ""
 
 #: libs/wpcli/class-base.php:266
-#: src/Modules/WP_CLI.php:277
+#: src/Modules/WP_CLI.php:369
 msgid "Cache disabled successfully"
 msgstr ""
 
 #: libs/wpcli/class-base.php:291
-#: src/Modules/WP_CLI.php:305
+#: src/Modules/WP_CLI.php:397
 msgid "Page caching does not appear to be working for either dynamic or static pages."
 msgstr ""
 
 #. translators: %1$s is the dynamic resource URL, %2$s is the error message.
 #: libs/wpcli/class-base.php:293
 #: libs/wpcli/class-base.php:299
-#: src/Modules/WP_CLI.php:308
-#: src/Modules/WP_CLI.php:319
+#: src/Modules/WP_CLI.php:400
+#: src/Modules/WP_CLI.php:411
 #, php-format
 msgid "Error on dynamic page (%1$s): %2$s"
 msgstr ""
 
 #. translators: %1$s is the static resource URL, %2$s is the error message.
 #: libs/wpcli/class-base.php:295
-#: src/Modules/WP_CLI.php:311
+#: src/Modules/WP_CLI.php:403
 #, php-format
 msgid "Error on static resource (%1$s): %2$s"
 msgstr ""
 
 #. translators: %s is the static resource URL.
 #: libs/wpcli/class-base.php:297
-#: src/Modules/WP_CLI.php:316
+#: src/Modules/WP_CLI.php:408
 #, php-format
 msgid "Page caching is working for the static page (%s) but does not appear to be working for dynamic pages."
 msgstr ""
 
 #: libs/wpcli/class-base.php:305
-#: src/Modules/WP_CLI.php:327
+#: src/Modules/WP_CLI.php:419
 msgid "Page caching is working properly"
 msgstr ""
 
 #: libs/wpcli/class-base.php:324
-#: src/Modules/WP_CLI.php:345
+#: src/Modules/WP_CLI.php:437
 #: src/Services/Cloudflare_Rule.php:471
 #: src/Utils/Cache_Tester.php:83
 msgid "Connection error: "
 msgstr ""
 
 #: libs/wpcli/class-base.php:337
-#: src/Modules/WP_CLI.php:356
+#: src/Modules/WP_CLI.php:448
 msgid "Plugin not detected on your home page. Disable any other caching systems and retry the test."
 msgstr ""
 
 #: libs/wpcli/class-base.php:343
-#: src/Modules/WP_CLI.php:362
+#: src/Modules/WP_CLI.php:454
 msgid "The cache is not enabled on your home page. It's not possible to verify if the page caching is working properly."
 msgstr ""
 
 #: libs/wpcli/class-base.php:349
-#: src/Modules/WP_CLI.php:368
+#: src/Modules/WP_CLI.php:460
 #: src/Utils/Cache_Tester.php:175
 msgid "It seems your website is not behind Cloudflare. If you've recently enabled the cache or this is your first test, wait about 30 seconds and try again — changes take a few seconds to propagate. If the error persists, contact support for a detailed check."
 msgstr ""
 
 #: libs/wpcli/class-base.php:355
-#: src/Modules/WP_CLI.php:374
+#: src/Modules/WP_CLI.php:466
 msgid "Unable to find the Cache-Control response header."
 msgstr ""
 
 #: libs/wpcli/class-base.php:361
-#: src/Modules/WP_CLI.php:380
+#: src/Modules/WP_CLI.php:472
 msgid "Unable to find the X-WP-CF-Super-Cache-Cache-Control response header."
 msgstr ""
 
 #: libs/wpcli/class-base.php:367
-#: src/Modules/WP_CLI.php:386
+#: src/Modules/WP_CLI.php:478
 #: src/Utils/Cache_Tester.php:239
 msgid "Invalid Cache-Control response header. If you are using LiteSpeed Server, please disable the option <strong>Overwrite the cache-control header for WordPress's pages using web server rules</strong>, purge the cache and retry."
 msgstr ""
 
 #. translators: %s is the CF-Cache-Status header value.
 #: libs/wpcli/class-base.php:377
-#: src/Modules/WP_CLI.php:403
+#: src/Modules/WP_CLI.php:495
 #: src/Utils/Cache_Tester.php:193
 #, php-format
 msgid "Cache status: %s — The cached resource is stale and was revalidated using conditional headers."
@@ -149,7 +149,7 @@ msgstr ""
 
 #. translators: %s is the CF-Cache-Status header value.
 #: libs/wpcli/class-base.php:383
-#: src/Modules/WP_CLI.php:414
+#: src/Modules/WP_CLI.php:506
 #: src/Utils/Cache_Tester.php:209
 #, php-format
 msgid "Cache status: %s — The cached resource has expired and is being refreshed. This status is common for high-traffic resources."
@@ -157,7 +157,7 @@ msgstr ""
 
 #. translators: %s is the CF-Cache-Status header value.
 #: libs/wpcli/class-base.php:389
-#: src/Modules/WP_CLI.php:421
+#: src/Modules/WP_CLI.php:513
 #: src/Utils/Cache_Tester.php:218
 #, php-format
 msgid "Cache status: %s - Cloudflare has been instructed to not cache this asset. It has been served directly from the origin."
@@ -165,20 +165,20 @@ msgstr ""
 
 #. translators: %s is the CF-Cache-Status header value.
 #: libs/wpcli/class-base.php:398
-#: src/Modules/WP_CLI.php:432
+#: src/Modules/WP_CLI.php:524
 #, php-format
 msgid "Cache status: %s - The resource was not cached by default and your current Cloudflare caching configuration doesn't instruct Cloudflare to cache the resource. Try to enable the <strong>Strip response cookies on pages that should be cached</strong> option and retry."
 msgstr ""
 
 #. translators: %s is the CF-Cache-Status header value.
 #: libs/wpcli/class-base.php:400
-#: src/Modules/WP_CLI.php:435
+#: src/Modules/WP_CLI.php:527
 #, php-format
 msgid "Cache status: %s - The resource was not cached by default and your current Cloudflare caching configuration doesn't instruct Cloudflare to cache the resource.  Instead, the resource was requested from the origin web server."
 msgstr ""
 
 #: libs/wpcli/class-base.php:406
-#: src/Modules/WP_CLI.php:441
+#: src/Modules/WP_CLI.php:533
 #: src/Utils/Cache_Tester.php:258
 msgid "Undefined error"
 msgstr ""
@@ -398,19 +398,19 @@ msgstr ""
 msgid "Unknown"
 msgstr ""
 
-#: src/Modules/Cache_Controller.php:710
-#: src/Modules/Cache_Controller.php:732
-#: src/Modules/Cache_Controller.php:757
+#: src/Modules/Cache_Controller.php:750
+#: src/Modules/Cache_Controller.php:772
+#: src/Modules/Cache_Controller.php:797
 msgid "Permission denied"
 msgstr ""
 
-#: src/Modules/Cache_Controller.php:717
-#: src/Modules/Cache_Controller.php:739
-#: src/Modules/Cache_Controller.php:773
+#: src/Modules/Cache_Controller.php:757
+#: src/Modules/Cache_Controller.php:779
+#: src/Modules/Cache_Controller.php:813
 msgid "Cache purged. The change may take up to 30 seconds to fully propagate."
 msgstr ""
 
-#: src/Modules/Cache_Controller.php:767
+#: src/Modules/Cache_Controller.php:807
 msgid "An error occurred while cleaning the cache. Please check log file for further details."
 msgstr ""
 
@@ -452,22 +452,22 @@ msgid "Help"
 msgstr ""
 
 #. translators: %1$s: rating, %2$d: number of reviews.
-#: src/Modules/Dashboard.php:402
+#: src/Modules/Dashboard.php:403
 #, php-format
 msgid "%1$s out of 5 stars (%2$d reviews)"
 msgstr ""
 
 #. translators: %s: number of active installations.
-#: src/Modules/Dashboard.php:404
+#: src/Modules/Dashboard.php:405
 #, php-format
 msgid "%s+ Active installations"
 msgstr ""
 
-#: src/Modules/Dashboard.php:405
+#: src/Modules/Dashboard.php:406
 msgid "Activate Robin Image Optimizer"
 msgstr ""
 
-#: src/Modules/Dashboard.php:405
+#: src/Modules/Dashboard.php:406
 msgid "Install Robin Image Optimizer"
 msgstr ""
 
@@ -692,149 +692,149 @@ msgstr ""
 msgid "Settings reset completed successfully."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:971
-msgid "Page cache enabled successfully"
+#: src/Modules/Rest_Server.php:983
+msgid "Page caching was enabled, but the disk cache drop-in could not be activated: advanced-cache.php or wp-config.php could not be updated. Check their file permissions, or add define( 'WP_CACHE', true ); to wp-config.php manually, then try again."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:983
+#: src/Modules/Rest_Server.php:990
 msgid "Page cache enabled successfully."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1003
+#: src/Modules/Rest_Server.php:1010
 msgid "Please refresh the page and try again."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1023
-#: src/Modules/Rest_Server.php:1038
+#: src/Modules/Rest_Server.php:1030
+#: src/Modules/Rest_Server.php:1045
 msgid "Activated"
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1038
+#: src/Modules/Rest_Server.php:1045
 msgid "Deactivated"
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1057
-#: src/Modules/Rest_Server.php:1066
-#: src/Modules/Rest_Server.php:1111
+#: src/Modules/Rest_Server.php:1064
+#: src/Modules/Rest_Server.php:1073
+#: src/Modules/Rest_Server.php:1118
 msgid "Invalid settings format provided."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1092
+#: src/Modules/Rest_Server.php:1099
 msgid "An error occurred while updating settings: "
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1117
+#: src/Modules/Rest_Server.php:1124
 msgid "Failed to import settings."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1170
 #: src/Modules/Rest_Server.php:1177
+#: src/Modules/Rest_Server.php:1184
 msgid "Email and API Key are required for API Key authentication."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1186
-#: src/Modules/Rest_Server.php:1192
+#: src/Modules/Rest_Server.php:1193
+#: src/Modules/Rest_Server.php:1199
 msgid "API Token is required for API Token authentication."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1198
+#: src/Modules/Rest_Server.php:1205
 msgid "Invalid authentication mode provided."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1212
+#: src/Modules/Rest_Server.php:1219
 msgid "Cloudflare rejected the authentication headers. Verify your auth mode and credentials."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1216
+#: src/Modules/Rest_Server.php:1223
 msgid "Failed to connect to Cloudflare: "
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1268
+#: src/Modules/Rest_Server.php:1275
 msgid "Cloudflare connected successfully via API Key."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1269
+#: src/Modules/Rest_Server.php:1276
 msgid "Cloudflare connected successfully via API Token."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1275
+#: src/Modules/Rest_Server.php:1282
 msgid "An error occurred while connecting to Cloudflare: "
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1329
+#: src/Modules/Rest_Server.php:1336
 msgid "Disconnected from Cloudflare."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1375
+#: src/Modules/Rest_Server.php:1382
 msgid "Invalid response from Cloudflare."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1401
+#: src/Modules/Rest_Server.php:1408
 msgid "Cloudflare connected, but Edge Caching could not be enabled. Check your Cloudflare permissions and try again."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1408
+#: src/Modules/Rest_Server.php:1415
 msgid "Successfully connected to Cloudflare."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1463
+#: src/Modules/Rest_Server.php:1470
 msgid "An error occurred while optimizing the database:"
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1485
+#: src/Modules/Rest_Server.php:1492
 msgid "An error occurred while fetching database optimization counts:"
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1540
+#: src/Modules/Rest_Server.php:1547
 msgid "Failed to repair the Cloudflare rule."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1545
+#: src/Modules/Rest_Server.php:1552
 msgid "Cloudflare rule repaired successfully."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1566
+#: src/Modules/Rest_Server.php:1573
 msgid "Failed to dismiss notice."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1569
+#: src/Modules/Rest_Server.php:1576
 msgid "Notice dismissed successfully."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1591
-#: src/Modules/Rest_Server.php:1606
+#: src/Modules/Rest_Server.php:1598
+#: src/Modules/Rest_Server.php:1613
 msgid "No changes to save."
 msgstr ""
 
 #. translators: %d is the number of assets with saved rules.
-#: src/Modules/Rest_Server.php:1611
+#: src/Modules/Rest_Server.php:1618
 #, php-format
 msgid "Saved rules for %d assets."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1614
+#: src/Modules/Rest_Server.php:1621
 msgid "Saved rules for one asset."
 msgstr ""
 
 #. translators: %s: comma-separated settings keys.
-#: src/Modules/Rest_Server.php:1715
+#: src/Modules/Rest_Server.php:1723
 #, php-format
 msgid "These settings are managed by wp-config.php and cannot be changed here: %s"
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1729
+#: src/Modules/Rest_Server.php:1737
 msgid "Settings updated successfully."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1732
+#: src/Modules/Rest_Server.php:1740
 msgid "Settings updated successfully. Some wp-config.php managed settings were skipped."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1744
+#: src/Modules/Rest_Server.php:1752
 msgid "Settings imported successfully."
 msgstr ""
 
-#: src/Modules/Rest_Server.php:1747
+#: src/Modules/Rest_Server.php:1755
 msgid "Settings imported successfully. Some wp-config.php managed settings were skipped."
 msgstr ""
 
@@ -1192,17 +1192,27 @@ msgid "Enable Cloudflare CDN & Caching"
 msgstr ""
 
 #: src/Utils/I18n.php:97
-msgid "Too many actions requested."
+msgid "Super Page Cache could not activate the disk page cache. Pages will not be cached to disk until this is fixed."
 msgstr ""
 
-#: src/Utils/I18n.php:98
-msgid "Invalid data format provided."
-msgstr ""
-
+#. translators: %s: define( 'WP_CACHE', true );
 #: src/Utils/I18n.php:99
-msgid "Cache tags"
+#, php-format
+msgid "The advanced-cache.php drop-in or wp-config.php could not be updated. Check that both files are writable, or add %s to wp-config.php manually, then save the settings again."
 msgstr ""
 
 #: src/Utils/I18n.php:100
+msgid "Too many actions requested."
+msgstr ""
+
+#: src/Utils/I18n.php:101
+msgid "Invalid data format provided."
+msgstr ""
+
+#: src/Utils/I18n.php:102
+msgid "Cache tags"
+msgstr ""
+
+#: src/Utils/I18n.php:103
 msgid "Click to copy"
 msgstr ""

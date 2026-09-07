@@ -48,6 +48,7 @@ declare global {
       cloudflareSettingsURL: string;
       cloudflareConnected: boolean;
       ruleNeedsRepair: boolean;
+      advancedCacheWriteFailed: boolean;
       hasOverdueJobs: boolean;
       homeURL: string;
       testCacheUrl: string;

@@ -94,6 +94,9 @@ class I18n {
 			'ruleFixTitle'                       => __( 'Super Page Cache could not update the Cloudflare cache rule. Edge caching may not work until this is fixed.', 'wp-cloudflare-page-cache' ),
 			// translators: %s: Enable Cloudflare CDN & Caching
 			'ruleFixDescription'                 => sprintf( __( 'We can attempt to reset the rule automatically for you, or you could toggle the %s setting on and off to fix this.', 'wp-cloudflare-page-cache' ), sprintf( '<code>%s</code>', __( 'Enable Cloudflare CDN & Caching', 'wp-cloudflare-page-cache' ) ) ),
+			'advancedCacheFixTitle'              => __( 'Super Page Cache could not activate the disk page cache. Pages will not be cached to disk until this is fixed.', 'wp-cloudflare-page-cache' ),
+			// translators: %s: define( 'WP_CACHE', true );
+			'advancedCacheFixDescription'        => sprintf( __( 'The advanced-cache.php drop-in or wp-config.php could not be updated. Check that both files are writable, or add %s to wp-config.php manually, then save the settings again.', 'wp-cloudflare-page-cache' ), '<code>define( \'WP_CACHE\', true );</code>' ),
 			'nonceRefreshTooManyActions'         => __( 'Too many actions requested.', 'wp-cloudflare-page-cache' ),
 			'invalidDataFormat'                  => __( 'Invalid data format provided.', 'wp-cloudflare-page-cache' ),
 			'cacheTags'                          => __( 'Cache tags', 'wp-cloudflare-page-cache' ),

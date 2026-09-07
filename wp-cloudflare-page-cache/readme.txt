@@ -1,10 +1,10 @@
 === Super Page Cache – Cloudflare Cache, Page Speed & Core Web Vitals ===
 Contributors: themeisle, salvatorefresta, isaumya
 Tags: cache, cloudflare, pagespeed, performance, cdn
-Requires at least: 5.3
+Requires at least: 6.5
 Requires PHP: 7.4
 Tested up to: 7.1
-Stable tag: 5.3.4
+Stable tag: 5.3.5
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -191,16 +191,15 @@ Check the FAQ tab in plugin settings first. If needed, enable log mode and send 
 
 == Changelog ==
 
-#####   Version 5.3.4 (2026-08-31)
+#####   Version 5.3.5 (2026-09-07)
 
-- Added a way to skip whole-cache purges after menu and theme changes.
-- Fixed REST optimization crashes for background selectors without image URLs.
-- Fixed large Cloudflare URL purges when multi-cURL support is unavailable.
-- Fixed pages losing critical styles before deferred stylesheets finish loading.
-- Fixed missing Google Fonts in the Gutenberg editor.
-- Fixed PDF downloads being stored in the page cache.
-- Update dependencies
-- Fixed disk cache becoming unavailable after a plugin update.
+- Fixed cache exclusions for exact file paths.
+- Fixed crashes when older cache drop-in files remain after plugin updates.
+- Fixed doctor checks for missing, old, or disabled disk cache files.
+- Fixed missing administrator warnings when the disk cache cannot be activated.
+- Fixed filtered pages remaining cached after the disk cache rejected their URLs.
+- Fixed fallback cache serving query page content from clean page URLs.
+- Fixed update errors on unsupported WordPress versions.
 
 
 

@@ -12,7 +12,7 @@ import { __ } from "@wordpress/i18n";
 const Cache = () => {
   const { wpConfigWritable, wpContentWritable, i18n } = window.SPCDash;
   const { validPro } = useAppStore();
-  const { isToggleOn, cloudflareConnected } = useSettingsStore();
+  const { isToggleOn, cloudflareConnected, advancedCacheWriteFailed } = useSettingsStore();
   const { setActiveMenuItem } = useNav();
 
 
@@ -102,6 +102,14 @@ const Cache = () => {
 
   return (
     <PageContent>
+
+      {advancedCacheWriteFailed && (
+        <Notice type="error"
+          title={i18n.advancedCacheFixTitle}
+          description={i18n.advancedCacheFixDescription}
+        />
+      )}
+
       <Card>
         {(!wpConfigWritable || !wpContentWritable) && (
           <CardHeader>

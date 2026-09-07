@@ -238,8 +238,9 @@ class Sanitization {
 			return '';
 		}
 
-		$uri = $parsed['path'];
-		if ( strlen( $uri ) > 1 && $uri[ strlen( $uri ) - 1 ] !== '/' && $uri[ strlen( $uri ) - 1 ] !== '*' ) {
+		$uri          = $parsed['path'];
+		$is_file_path = (bool) preg_match( '/\.[A-Za-z0-9]+$/', basename( $uri ) );
+		if ( strlen( $uri ) > 1 && ! $is_file_path && $uri[ strlen( $uri ) - 1 ] !== '/' && $uri[ strlen( $uri ) - 1 ] !== '*' ) {
 			$uri .= '/';
 		}
 

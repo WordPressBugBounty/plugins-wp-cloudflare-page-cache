@@ -21,7 +21,7 @@ if ( ! class_exists( 'SW_CLOUDFLARE_PAGECACHE' ) ) {
 	define( 'SWCFPC_PLUGIN_FORUM_URL', 'https://wordpress.org/support/plugin/wp-cloudflare-page-cache/' );
 	define( 'SWCFPC_AUTH_MODE_API_KEY', 0 );
 	define( 'SWCFPC_AUTH_MODE_API_TOKEN', 1 );
-	define( 'SWCFPC_VERSION', '5.3.4' );
+	define( 'SWCFPC_VERSION', '5.3.5' );
 	if ( ! defined( 'SPC_METRICS_DIR' ) ) {
 		$home_url_parts = parse_url( home_url() );
 		$home_url_host  = ! empty( $home_url_parts['host'] ) ? $home_url_parts['host'] : '';

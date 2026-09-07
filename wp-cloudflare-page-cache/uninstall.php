@@ -14,6 +14,8 @@ delete_option( 'swcfpc_previous_version' );
 delete_option( 'swcfpc_preloader_lock' );
 delete_option( 'swcfpc_purge_cache_lock' );
 delete_option( 'swcfpc_fc_ttl_registry' );
+delete_option( 'swcfpc_advanced_cache_write_failed' );
+delete_option( 'cf_rule_update_failed' );
 
 $parts = parse_url( home_url() );
 

@@ -146,8 +146,7 @@ class Fallback_Cache implements Module_Interface {
 
 			$source_content = file_get_contents( $advanced_cache_source );
 			if ( false === $source_content ) {
-				Logger::log( 'fallback_cache::fallback_cache_advanced_cache_enable', 'Unable to read advanced-cache.php source' );
-				return false;
+				return $this->record_advanced_cache_enable_failure( 'Unable to read advanced-cache.php source' );
 			}
 
 			$source_content = str_replace( "'SWCFPC_VERSION_PLACEHOLDER'", "'" . SWCFPC_VERSION . "'", $source_content );
@@ -158,24 +157,28 @@ class Fallback_Cache implements Module_Interface {
 			// each other's staged copy, and the byte count is verified because
 			// file_put_contents() reports a partial write (disk full) as a
 			// count, not as false.
-			$advanced_cache_temp = $advanced_cache_dest . '.' . getmypid() . '.swcfpc-tmp';
+			// getmypid() is commonly disabled through disable_functions on hardened
+			// hosts, which would otherwise fatal here on every drop-in write.
+			$process_id = function_exists( 'getmypid' ) ? getmypid() : false;
+			if ( false === $process_id ) {
+				$process_id = uniqid( '', true );
+			}
+			$advanced_cache_temp = $advanced_cache_dest . '.' . $process_id . '.swcfpc-tmp';
 
 			if ( file_put_contents( $advanced_cache_temp, $source_content ) !== strlen( $source_content ) ) {
 				@unlink( $advanced_cache_temp );
-				Logger::log( 'fallback_cache::fallback_cache_advanced_cache_enable', 'Unable to write the new advanced-cache.php to the wp-content directory' );
-				return false;
+				return $this->record_advanced_cache_enable_failure( 'Unable to write the new advanced-cache.php to the wp-content directory' );
 			}
 
 			if ( ! @rename( $advanced_cache_temp, $advanced_cache_dest ) ) {
 				@unlink( $advanced_cache_temp );
-				Logger::log( 'fallback_cache::fallback_cache_advanced_cache_enable', 'Unable to move the new advanced-cache.php into place' );
-				return false;
+				return $this->record_advanced_cache_enable_failure( 'Unable to move the new advanced-cache.php into place' );
 			}
 
 			if ( $force_wp_cache || ! defined( 'WP_CACHE' ) || ( defined( 'WP_CACHE' ) && WP_CACHE === false ) ) {
 
 				if ( ! $this->fallback_cache_add_define_cache_wp_config() ) {
-					return false;
+					return $this->record_advanced_cache_enable_failure( 'Unable to enable WP_CACHE in wp-config.php' );
 				}
 			}
 
@@ -188,11 +191,12 @@ class Fallback_Cache implements Module_Interface {
 			if ( ! defined( 'WP_CACHE' ) || ( defined( 'WP_CACHE' ) && WP_CACHE === false ) ) {
 
 				if ( ! $this->fallback_cache_add_define_cache_wp_config() ) {
-					return false;
+					return $this->record_advanced_cache_enable_failure( 'Unable to enable WP_CACHE in wp-config.php' );
 				}
 			}
 		}
 
+		$this->clear_advanced_cache_enable_failure();
 		do_action( 'swcfpc_advanced_cache_after_enable' );
 
 		return true;
@@ -207,11 +211,40 @@ class Fallback_Cache implements Module_Interface {
 		return defined( 'SWCFPC_ADVANCED_CACHE_VERSION' ) && SWCFPC_ADVANCED_CACHE_VERSION === SWCFPC_VERSION;
 	}
 
+	/**
+	 * Persist a failed drop-in activation so administrators can act on it.
+	 *
+	 * @param string $message Internal failure reason for the plugin log.
+	 *
+	 * @return bool
+	 */
+	private function record_advanced_cache_enable_failure( string $message ): bool {
+		Logger::log( 'fallback_cache::fallback_cache_advanced_cache_enable', $message );
+		update_option( Constants::KEY_ADVANCED_CACHE_WRITE_FAILED, $message, false );
+
+		return false;
+	}
+
+	/**
+	 * Clear a recorded drop-in activation failure.
+	 *
+	 * Runs on every request via init(), so only touch the database when a
+	 * failure was actually recorded — delete_option() alone always queries.
+	 *
+	 * @return void
+	 */
+	private function clear_advanced_cache_enable_failure(): void {
+		if ( false !== get_option( Constants::KEY_ADVANCED_CACHE_WRITE_FAILED, false ) ) {
+			delete_option( Constants::KEY_ADVANCED_CACHE_WRITE_FAILED );
+		}
+	}
+
 
 	/**
 	 * @return bool
 	 */
 	public function fallback_cache_advanced_cache_disable() {
+		$this->clear_advanced_cache_enable_failure();
 
 		if ( defined( 'SWCFPC_ADVANCED_CACHE' ) ) {
 
@@ -533,6 +566,10 @@ class Fallback_Cache implements Module_Interface {
 				$url = substr( trim( $url ), 0, -1 );
 
 			} else {
+				// The trailing slash belongs to the query value, so keep the query in the cache key.
+				if ( substr( $url_parsed['query'], -1 ) === '/' ) {
+					return $url;
+				}
 
 				parse_str( $url_parsed['query'], $url_query_params );
 
@@ -593,7 +630,7 @@ class Fallback_Cache implements Module_Interface {
 				$current_uri = $_SERVER['HTTP_HOST'];
 			}
 
-			$current_uri = trim( $current_uri, '/' );
+			$current_uri = ltrim( $current_uri, '/' );
 
 			if ( strpos( $current_uri, '?' ) === 0 ) {
 				$current_uri = $_SERVER['HTTP_HOST'] . $current_uri;
@@ -790,14 +827,14 @@ class Fallback_Cache implements Module_Interface {
 		$cache_path = $this->fallback_cache_init_directory();
 		$cache_key  = $this->fallback_cache_get_current_page_cache_key();
 
-		if ( $this->should_prevent_cache_because_of_trailingslash() ) {
-			Helpers::bypass_reason_header( 'Not a slashed URL' );
+		if ( $this->fallback_cache_is_cookie_to_exclude() ) {
+			Helpers::bypass_reason_header( 'Excluded cookie' );
 
 			return false;
 		}
 
-		if ( $this->fallback_cache_is_cookie_to_exclude() ) {
-			Helpers::bypass_reason_header( 'Excluded cookie' );
+		if ( $this->should_prevent_cache_because_of_trailingslash() ) {
+			Helpers::bypass_reason_header( 'Not a slashed URL' );
 
 			return false;
 		}

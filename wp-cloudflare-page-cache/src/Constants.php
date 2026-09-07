@@ -679,7 +679,8 @@ class Constants {
 		'zeffdn',
 	];
 
-	public const KEY_RULE_UPDATE_FAILED = 'cf_rule_update_failed';
+	public const KEY_RULE_UPDATE_FAILED          = 'cf_rule_update_failed';
+	public const KEY_ADVANCED_CACHE_WRITE_FAILED = 'swcfpc_advanced_cache_write_failed';
 
 	public const PRELOAD_EXCLUDED_POST_TYPES = [
 		'attachment',

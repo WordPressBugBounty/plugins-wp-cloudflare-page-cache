@@ -64,6 +64,36 @@ class Cache_Controller implements Module_Interface {
 	}
 
 	/**
+	 * Compatibility bridge for advanced-cache.php drop-ins shipped before the
+	 * cache-controller refactor.
+	 *
+	 * @return bool
+	 */
+	public function is_cache_enabled() {
+		return Settings_Store::get_instance()->is_cache_enabled();
+	}
+
+	/**
+	 * Compatibility bridge for advanced-cache.php drop-ins shipped before the
+	 * cache-controller refactor.
+	 *
+	 * @return bool
+	 */
+	public function is_url_to_bypass() {
+		return Bypass_Resolver::is_url_to_bypass();
+	}
+
+	/**
+	 * Compatibility bridge for advanced-cache.php drop-ins shipped before the
+	 * cache-controller refactor.
+	 *
+	 * @return bool
+	 */
+	public function can_i_bypass_cache() {
+		return Bypass_Resolver::can_i_bypass_cache();
+	}
+
+	/**
 	 * @return void
 	 */
 	public function setup_response_headers_backend() {
@@ -287,6 +317,16 @@ class Cache_Controller implements Module_Interface {
 			return;
 		}
 
+		// The early fallback-cache path records its own rejection reason before
+		// WordPress reaches template_redirect. Do not turn a response rejected for
+		// cookies, query variants or another shared-cache risk back into a cacheable
+		// Cloudflare response with a long s-maxage.
+		$fallback_bypass_reason = Helpers::get_cache_bypass_reason_header();
+		if ( Helpers::should_demote_fallback_cache_bypass( $fallback_bypass_reason ) ) {
+			$this->demote_response_to_bypass( 'Fallback cache bypass' );
+			return;
+		}
+
 		if ( $this->bypass_cache_for_non_html_response() ) {
 			return;
 		}
@@ -304,7 +344,7 @@ class Cache_Controller implements Module_Interface {
 		header( 'Cache-Control: ' . $settings->get_cache_control_value() );
 
 		$status = $settings->get( Constants::SETTING_ENABLE_FALLBACK_CACHE, 0 ) > 0 ? 'HIT' : 'DISABLED';
-		if ( Helpers::has_cache_bypass_reason_header() ) {
+		if ( null !== $fallback_bypass_reason ) {
 			$status = 'BYPASS';
 		}
 

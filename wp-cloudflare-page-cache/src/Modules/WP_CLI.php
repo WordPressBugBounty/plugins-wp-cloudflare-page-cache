@@ -158,6 +158,8 @@ class WP_CLI extends \WP_CLI_Command implements Module_Interface {
 			],
 		];
 
+		$checks = array_merge( $checks, $this->get_advanced_cache_health_checks( $settings ) );
+
 		if ( $run_cache_test ) {
 			$test_results = ( new Cache_Tester() )->cli_test();
 
@@ -176,6 +178,96 @@ class WP_CLI extends \WP_CLI_Command implements Module_Interface {
 				\WP_CLI::halt( 4 );
 			}
 		}
+	}
+
+	/**
+	 * Build runtime health checks for the advanced disk-cache integration.
+	 *
+	 * @param Settings_Store $settings Settings service.
+	 *
+	 * @return array<int, array<string, string>>
+	 */
+	private function get_advanced_cache_health_checks( Settings_Store $settings ): array {
+		$required = $settings->is_cache_enabled()
+			&& (bool) $settings->get( Constants::SETTING_ENABLE_FALLBACK_CACHE )
+			&& ! (bool) $settings->get( Constants::SETTING_FALLBACK_CACHE_CURL );
+
+		return $this->build_advanced_cache_health_checks(
+			$required,
+			is_file( WP_CONTENT_DIR . '/advanced-cache.php' ),
+			defined( 'SWCFPC_ADVANCED_CACHE_VERSION' ) ? (string) SWCFPC_ADVANCED_CACHE_VERSION : null,
+			defined( 'WP_CACHE' ) && (bool) WP_CACHE
+		);
+	}
+
+	/**
+	 * Create deterministic doctor rows from the observed runtime state.
+	 *
+	 * @param bool        $required          Whether current settings require the drop-in.
+	 * @param bool        $drop_in_exists    Whether wp-content/advanced-cache.php is a file.
+	 * @param string|null $active_version    Version reported by the active SPC drop-in.
+	 * @param bool        $wp_cache_enabled  Whether WP_CACHE is defined as enabled.
+	 *
+	 * @return array<int, array<string, string>>
+	 */
+	private function build_advanced_cache_health_checks( bool $required, bool $drop_in_exists, ?string $active_version, bool $wp_cache_enabled ): array {
+		if ( ! $required ) {
+			$not_required = 'The advanced-cache.php drop-in is not required by the current fallback cache settings.';
+
+			return [
+				[
+					'check'   => 'advanced_cache_drop_in',
+					'status'  => 'info',
+					'type'    => 'runtime',
+					'details' => $not_required,
+				],
+				[
+					'check'   => 'advanced_cache_version',
+					'status'  => 'info',
+					'type'    => 'runtime',
+					'details' => $not_required,
+				],
+				[
+					'check'   => 'wp_cache',
+					'status'  => 'info',
+					'type'    => 'runtime',
+					'details' => $not_required,
+				],
+			];
+		}
+
+		$version_matches = $drop_in_exists && null !== $active_version && SWCFPC_VERSION === $active_version;
+
+		if ( ! $drop_in_exists ) {
+			$version_details = 'The advanced-cache.php version cannot be verified because the drop-in is missing.';
+		} elseif ( null === $active_version ) {
+			$version_details = 'The active advanced-cache.php does not report an SPC version.';
+		} elseif ( ! $version_matches ) {
+			$version_details = sprintf( 'The active advanced-cache.php version (%s) does not match the plugin version (%s).', $active_version, SWCFPC_VERSION );
+		} else {
+			$version_details = sprintf( 'The active advanced-cache.php matches plugin version %s.', SWCFPC_VERSION );
+		}
+
+		return [
+			[
+				'check'   => 'advanced_cache_drop_in',
+				'status'  => $drop_in_exists ? 'pass' : 'fail',
+				'type'    => 'runtime',
+				'details' => $drop_in_exists ? 'The advanced-cache.php drop-in exists.' : 'The advanced-cache.php drop-in is missing from wp-content.',
+			],
+			[
+				'check'   => 'advanced_cache_version',
+				'status'  => $version_matches ? 'pass' : 'fail',
+				'type'    => 'runtime',
+				'details' => $version_details,
+			],
+			[
+				'check'   => 'wp_cache',
+				'status'  => $wp_cache_enabled ? 'pass' : 'fail',
+				'type'    => 'runtime',
+				'details' => $wp_cache_enabled ? 'WP_CACHE is enabled.' : 'WP_CACHE is not defined as enabled.',
+			],
+		];
 	}
 
 	/**

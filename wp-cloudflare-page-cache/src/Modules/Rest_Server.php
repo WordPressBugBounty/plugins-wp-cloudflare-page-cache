@@ -960,15 +960,15 @@ class Rest_Server implements Module_Interface {
 			->set( Constants::SETTING_ENABLE_FALLBACK_CACHE, 1 )
 			->save();
 
+		$advanced_cache_activated = true;
+
 		if (
 			Settings_Manager::is_on( Constants::SETTING_ENABLE_FALLBACK_CACHE ) &&
 			! Settings_Manager::is_on( Constants::SETTING_FALLBACK_CACHE_CURL ) &&
 			! defined( 'SWCFPC_ADVANCED_CACHE' )
 		) {
-			$sw_cloudflare_pagecache->get_core_loader()->fallback_cache()->fallback_cache_advanced_cache_enable();
+			$advanced_cache_activated = $sw_cloudflare_pagecache->get_core_loader()->fallback_cache()->fallback_cache_advanced_cache_enable();
 		}
-
-		$return_array['success_msg'] = __( 'Page cache enabled successfully', 'wp-cloudflare-page-cache' );
 
 		// Enable the fallback cache
 		$sw_cloudflare_pagecache->get_core_loader()->fallback_cache()->fallback_cache_enable();
@@ -977,6 +977,13 @@ class Rest_Server implements Module_Interface {
 		Settings_Store::get_instance()
 			->set( Constants::SETTING_ENABLE_FALLBACK_CACHE, 1 )
 			->save();
+
+		if ( ! $advanced_cache_activated ) {
+			return $this->message_response(
+				__( 'Page caching was enabled, but the disk cache drop-in could not be activated: advanced-cache.php or wp-config.php could not be updated. Check their file permissions, or add define( \'WP_CACHE\', true ); to wp-config.php manually, then try again.', 'wp-cloudflare-page-cache' ),
+				500
+			);
+		}
 
 		return $this->data_response(
 			[
@@ -1697,8 +1704,9 @@ class Rest_Server implements Module_Interface {
 		$settings = Settings_Store::get_instance();
 
 		return [
-			'cloudflareConnected'    => $settings->is_cloudflare_connected(),
-			'invalidEncryptionState' => $settings->should_show_invalid_encryption_notice(),
+			'cloudflareConnected'      => $settings->is_cloudflare_connected(),
+			'invalidEncryptionState'   => $settings->should_show_invalid_encryption_notice(),
+			'advancedCacheWriteFailed' => false !== get_option( Constants::KEY_ADVANCED_CACHE_WRITE_FAILED, false ),
 		];
 	}
 

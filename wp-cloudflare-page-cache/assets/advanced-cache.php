@@ -80,11 +80,11 @@ if ($__spc_backend === 'file') {
 
 $swcfpc_fallback_cache_key = swcfpc_fallback_cache_get_current_page_cache_key();
 
-if ( swcfpc_fallback_cache_is_url_to_exclude() ) {
+if ( swcfpc_fallback_cache_is_cookie_to_exclude() ) {
 	return;
 }
 
-if ( swcfpc_fallback_cache_is_cookie_to_exclude() ) {
+if ( swcfpc_fallback_cache_is_url_to_exclude() ) {
 	return;
 }
 
@@ -308,7 +308,7 @@ function swcfpc_normalize_url( $url = null ) {
 			$current_uri = $_SERVER['HTTP_HOST'];
 		}
 
-		$current_uri = trim( $current_uri, '/' );
+		$current_uri = ltrim( $current_uri, '/' );
 
 		if ( strpos( $current_uri, '?' ) === 0 ) {
 			$current_uri = $_SERVER['HTTP_HOST'] . $current_uri;
@@ -356,6 +356,10 @@ function swcfpc_fallback_cache_remove_url_parameters( $url ) {
 			$url = substr( trim( $url ), 0, - 1 );
 
 		} else {
+			// The trailing slash belongs to the query value, so keep the query in the cache key.
+			if ( substr( $url_parsed['query'], -1 ) === '/' ) {
+				return $url;
+			}
 
 			// Set the ignored query param array
 			$ignored_query_params = [

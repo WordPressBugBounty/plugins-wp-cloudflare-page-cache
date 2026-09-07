@@ -27,14 +27,13 @@ class ActionScheduler_OptionLock extends ActionScheduler_Lock {
 	public function set( $lock_type ) {
 		global $wpdb;
 
-		$now                 = time();
 		$lock_key            = $this->get_key( $lock_type );
-		$existing_lock_value = $this->get_existing_lock( $lock_type, $now );
-		$new_lock_value      = $this->new_lock_value( $lock_type, $now );
+		$existing_lock_value = $this->get_existing_lock( $lock_type );
+		$new_lock_value      = $this->new_lock_value( $lock_type );
 
 		// The lock may not exist yet, or may have been deleted.
-		if ( null === $existing_lock_value ) {
-			$inserted = (bool) $wpdb->insert(
+		if ( empty( $existing_lock_value ) ) {
+			return (bool) $wpdb->insert(
 				$wpdb->options,
 				array(
 					'option_name'  => $lock_key,
@@ -42,24 +41,14 @@ class ActionScheduler_OptionLock extends ActionScheduler_Lock {
 					'autoload'     => 'no',
 				)
 			);
-
-			// Sync cache as necessary.
-			if ( $inserted ) {
-				$ttl = $this->get_expiration_from( $new_lock_value ) - $now;
-				if ( $ttl > 0 ) {
-					wp_cache_set( $lock_key, $new_lock_value, 'action_scheduler_locks', $ttl );
-				}
-			}
-
-			return $inserted;
 		}
 
-		if ( $this->get_expiration_from( $existing_lock_value ) >= $now ) {
+		if ( $this->get_expiration_from( $existing_lock_value ) >= time() ) {
 			return false;
 		}
 
 		// Otherwise, try to obtain the lock.
-		$updated = (bool) $wpdb->update(
+		return (bool) $wpdb->update(
 			$wpdb->options,
 			array( 'option_value' => $new_lock_value ),
 			array(
@@ -67,20 +56,6 @@ class ActionScheduler_OptionLock extends ActionScheduler_Lock {
 				'option_value' => $existing_lock_value,
 			)
 		);
-
-		// Sync cache as necessary.
-		if ( $updated ) {
-			$ttl = $this->get_expiration_from( $new_lock_value ) - $now;
-			if ( $ttl > 0 ) {
-				wp_cache_set( $lock_key, $new_lock_value, 'action_scheduler_locks', $ttl );
-			}
-		} else {
-			// Compare-and-swap failed — another process acquired the lock between our read and write.
-			// Invalidate cache: the expired value may still be live in WP object cache (TTL=1 edge case) before the winner's wp_cache_set executes.
-			wp_cache_delete( $lock_key, 'action_scheduler_locks' );
-		}
-
-		return $updated;
 	}
 
 	/**
@@ -90,7 +65,7 @@ class ActionScheduler_OptionLock extends ActionScheduler_Lock {
 	 * @return bool|int False if no lock is set, otherwise the timestamp for when the lock is set to expire.
 	 */
 	public function get_expiration( $lock_type ) {
-		return $this->get_expiration_from( (string) $this->get_existing_lock( $lock_type, time() ) );
+		return $this->get_expiration_from( $this->get_existing_lock( $lock_type ) );
 	}
 
 	/**
@@ -102,15 +77,14 @@ class ActionScheduler_OptionLock extends ActionScheduler_Lock {
 	 */
 	private function get_expiration_from( $lock_value ) {
 		$lock_string = explode( '|', $lock_value );
-		$count       = count( $lock_string );
 
 		// Old style lock?
-		if ( 1 === $count && is_numeric( $lock_string[0] ) ) {
+		if ( count( $lock_string ) === 1 && is_numeric( $lock_string[0] ) ) {
 			return (int) $lock_string[0];
 		}
 
 		// New style lock?
-		if ( 2 === $count && is_numeric( $lock_string[1] ) ) {
+		if ( count( $lock_string ) === 2 && is_numeric( $lock_string[1] ) ) {
 			return (int) $lock_string[1];
 		}
 
@@ -128,42 +102,22 @@ class ActionScheduler_OptionLock extends ActionScheduler_Lock {
 	}
 
 	/**
-	 * Supplies the existing lock value, or null if not set.
+	 * Supplies the existing lock value, or an empty string if not set.
 	 *
 	 * @param string $lock_type A string to identify different lock types.
-	 * @param int    $now       The timestamp to use.
 	 *
-	 * @return string|null
+	 * @return string
 	 */
-	private function get_existing_lock( $lock_type, int $now ) {
+	private function get_existing_lock( $lock_type ) {
 		global $wpdb;
 
-		$lock_key = $this->get_key( $lock_type );
-		$cached   = wp_cache_get( $lock_key, 'action_scheduler_locks' );
-		if ( false !== $cached ) {
-			return (string) $cached;
-		}
-
-		$value = null;
 		// Now grab the existing lock value, if there is one.
-		// get_var() returns null for the empty string ('') so we must use get_row().
-		$row = $wpdb->get_row(
+		return (string) $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT option_value FROM $wpdb->options WHERE option_name = %s",
-				$lock_key
+				$this->get_key( $lock_type )
 			)
 		);
-
-		if ( $row ) {
-			$value = $row->option_value;
-			// Sync cache as necessary.
-			$ttl = $this->get_expiration_from( $value ) - $now;
-			if ( $ttl > 0 ) {
-				wp_cache_set( $lock_key, $value, 'action_scheduler_locks', $ttl );
-			}
-		}
-
-		return $value;
 	}
 
 	/**
@@ -173,11 +127,10 @@ class ActionScheduler_OptionLock extends ActionScheduler_Lock {
 	 * Example: (string) "649de012e6b262.09774912|1688068114"
 	 *
 	 * @param string $lock_type A string to identify different lock types.
-	 * @param int    $now       The timestamp to use.
 	 *
 	 * @return string
 	 */
-	private function new_lock_value( $lock_type, int $now ): string {
-		return uniqid( '', true ) . '|' . ( $now + $this->get_duration( $lock_type ) );
+	private function new_lock_value( $lock_type ) {
+		return uniqid( '', true ) . '|' . ( time() + $this->get_duration( $lock_type ) );
 	}
 }

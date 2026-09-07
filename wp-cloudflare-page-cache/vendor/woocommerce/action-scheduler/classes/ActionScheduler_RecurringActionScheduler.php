@@ -24,9 +24,7 @@ class ActionScheduler_RecurringActionScheduler {
 	 */
 	public function init(): void {
 		add_action( self::RUN_SCHEDULED_RECURRING_ACTIONS_HOOK, array( $this, 'run_recurring_scheduler_hook' ) );
-		// Also run the check during queue processing, so installs without admin traffic still schedule the recurring action.
-		add_action( 'action_scheduler_before_process_queue', array( $this, 'schedule_recurring_scheduler_hook' ) );
-		if ( is_admin() && ! wp_doing_ajax() && ! wp_is_serving_rest_request() ) {
+		if ( is_admin() && ( ! defined( 'DOING_AJAX' ) || ! DOING_AJAX ) ) {
 			add_action( 'action_scheduler_init', array( $this, 'schedule_recurring_scheduler_hook' ) );
 		}
 	}
@@ -37,11 +35,10 @@ class ActionScheduler_RecurringActionScheduler {
 	 * @return void
 	 */
 	public function schedule_recurring_scheduler_hook(): void {
-		if ( false === get_transient( 'as_is_ensure_recurring_actions_scheduled' ) ) {
+		if ( false === wp_cache_get( 'as_is_ensure_recurring_actions_scheduled' ) ) {
 			if ( ! as_has_scheduled_action( self::RUN_SCHEDULED_RECURRING_ACTIONS_HOOK ) ) {
-				$date = ActionScheduler_TimezoneHelper::set_local_timezone( new DateTime() )->modify( 'tomorrow 3am' );
 				as_schedule_recurring_action(
-					$date->getTimestamp(),
+					time(),
 					DAY_IN_SECONDS,
 					self::RUN_SCHEDULED_RECURRING_ACTIONS_HOOK,
 					[],
@@ -50,7 +47,7 @@ class ActionScheduler_RecurringActionScheduler {
 					20
 				);
 			}
-			set_transient( 'as_is_ensure_recurring_actions_scheduled', true, HOUR_IN_SECONDS );
+			wp_cache_set( 'as_is_ensure_recurring_actions_scheduled', true, HOUR_IN_SECONDS );
 		}
 	}
 

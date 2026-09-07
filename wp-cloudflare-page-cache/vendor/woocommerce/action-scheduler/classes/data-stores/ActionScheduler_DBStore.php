@@ -10,16 +10,6 @@
 class ActionScheduler_DBStore extends ActionScheduler_Store {
 
 	/**
-	 * WordPress object cache group for resolved group IDs.
-	 */
-	const GROUP_IDS_CACHE_GROUP = 'action_scheduler_groups';
-
-	/**
-	 * Cache key used for the default (empty-slug) group, since wp_cache_* rejects empty string keys.
-	 */
-	const GROUP_IDS_DEFAULT_CACHE_KEY = 'group:default';
-
-	/**
 	 * Used to share information about the before_date property of claims internally.
 	 *
 	 * This is used in preference to passing the same information as a method param
@@ -63,23 +53,6 @@ class ActionScheduler_DBStore extends ActionScheduler_Store {
 		$table_maker = new ActionScheduler_StoreSchema();
 		$table_maker->init();
 		$table_maker->register_tables();
-	}
-
-	/**
-	 * Flush all store caches.
-	 */
-	public function flush_caches() {
-		wp_cache_flush_group( self::GROUP_IDS_CACHE_GROUP );
-	}
-
-	/**
-	 * Translate a group slug into a valid (non-empty) object cache key.
-	 *
-	 * @param string $slug Group slug.
-	 * @return string
-	 */
-	private function get_group_cache_key( string $slug ): string {
-		return '' !== $slug ? $slug : self::GROUP_IDS_DEFAULT_CACHE_KEY;
 	}
 
 	/**
@@ -229,14 +202,12 @@ SELECT action_id FROM $table_name
 WHERE status IN ( $pending_status_placeholders )
 AND hook = %s
 AND `group_id` = %d
-AND args = %s
 ",
 			array_merge(
 				$pending_statuses,
 				array(
 					$data['hook'],
 					$data['group_id'],
-					$data['args'],
 				)
 			)
 		);
@@ -291,17 +262,17 @@ AND args = %s
 		}
 		return $this->hash_args( $encoded );
 	}
-
 	/**
 	 * Get a group's ID based on its name/slug.
 	 *
 	 * @param string|array $slugs                The string name of a group, or names for several groups.
 	 * @param bool         $create_if_not_exists Whether to create the group if it does not already exist. Default, true - create the group.
 	 *
-	 * @return int[] The group IDs, if they exist or were successfully created. May be empty.
+	 * @return array The group IDs, if they exist or were successfully created. May be empty.
 	 */
 	protected function get_group_ids( $slugs, $create_if_not_exists = true ) {
-		$slugs = (array) $slugs;
+		$slugs     = (array) $slugs;
+		$group_ids = array();
 
 		if ( empty( $slugs ) ) {
 			return array();
@@ -314,54 +285,16 @@ AND args = %s
 		 */
 		global $wpdb;
 
-		// For the primary path, resolve slugs using the WordPress cache first, then identify which slugs require a database lookup.
-		$group_ids  = array();
-		$unresolved = array();
 		foreach ( $slugs as $slug ) {
-			$cached_group_id = wp_cache_get( $this->get_group_cache_key( (string) $slug ), self::GROUP_IDS_CACHE_GROUP );
-			if ( false !== $cached_group_id ) {
-				$group_ids[] = (int) $cached_group_id;
-			} else {
-				$unresolved[] = $slug;
-			}
-		}
+			$group_id = (int) $wpdb->get_var( $wpdb->prepare( "SELECT group_id FROM {$wpdb->actionscheduler_groups} WHERE slug=%s", $slug ) );
 
-		// For the secondary or initialization path, bulk-resolve any remaining slugs from the database.
-		if ( ! empty( $unresolved ) ) {
-			$resolved = array();
-
-			// Bulk-fetch unresolved slugs from the database. It is acceptable not to use wp_cache_set_multiple to maintain code simplicity.
-			$placeholders = implode( ', ', array_fill( 0, count( $unresolved ), '%s' ) );
-			$rows         = $wpdb->get_results(
-				$wpdb->prepare(
-					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
-					"SELECT group_id, slug FROM {$wpdb->actionscheduler_groups} WHERE slug IN ( $placeholders )",
-					...$unresolved
-				)
-			);
-			foreach ( $rows as $row ) {
-				$resolved[] = $row->slug;
-				wp_cache_set( $this->get_group_cache_key( $row->slug ), $row->group_id, self::GROUP_IDS_CACHE_GROUP, 10 * MINUTE_IN_SECONDS );
+			if ( empty( $group_id ) && $create_if_not_exists ) {
+				$group_id = $this->create_group( $slug );
 			}
 
-			// Automatically create unresolved slugs if requested.
-			if ( $create_if_not_exists ) {
-				foreach ( array_diff( $unresolved, $resolved ) as $slug ) {
-					$this->create_group( $slug );
-				}
+			if ( $group_id ) {
+				$group_ids[] = $group_id;
 			}
-
-			// Ensure stable sorting by aligning the IDs, which are currently sourced from various locations, to match the order of the provided slugs.
-			$group_ids = array_values(
-				array_filter(
-					array_map(
-						function ( $slug ) {
-							return (int) wp_cache_get( $this->get_group_cache_key( (string) $slug ), self::GROUP_IDS_CACHE_GROUP );
-						},
-						$slugs
-					)
-				)
-			);
 		}
 
 		return $group_ids;
@@ -384,12 +317,7 @@ AND args = %s
 
 		$wpdb->insert( $wpdb->actionscheduler_groups, array( 'slug' => $slug ) );
 
-		$group_id = (int) $wpdb->insert_id;
-		if ( $group_id ) {
-			wp_cache_set( $this->get_group_cache_key( $slug ), $group_id, self::GROUP_IDS_CACHE_GROUP, 10 * MINUTE_IN_SECONDS );
-		}
-
-		return $group_id;
+		return (int) $wpdb->insert_id;
 	}
 
 	/**
@@ -463,22 +391,17 @@ AND args = %s
 	 * @return ActionScheduler_Action|ActionScheduler_CanceledAction|ActionScheduler_FinishedAction
 	 */
 	protected function make_action_from_db_record( $data ) {
-		$args = json_decode( $data->args, true );
-		if ( ! is_array( $args ) && $data->status === self::STATUS_CANCELED ) {
-			// The handled corrupted action should appear in UI.
-			$args = array();
-		} else {
-			$this->validate_args( $args, $data->action_id );
-		}
 
-		$schedule = ActionScheduler_ScheduleDeserializer::unserialize( $data->schedule );
-		if ( false === $schedule && $data->status === self::STATUS_CANCELED ) {
-			// The handled corrupted action should appear in UI.
+		$hook     = $data->hook;
+		$args     = json_decode( $data->args, true );
+		$schedule = unserialize( $data->schedule ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_unserialize
+
+		$this->validate_args( $args, $data->action_id );
+		$this->validate_schedule( $schedule, $data->action_id );
+
+		if ( empty( $schedule ) ) {
 			$schedule = new ActionScheduler_NullSchedule();
-		} else {
-			$this->validate_schedule( $schedule, $data->action_id );
 		}
-
 		$group = $data->group ? $data->group : '';
 
 		return ActionScheduler::factory()->get_stored_action( $data->status, $data->hook, $args, $schedule, $group, $data->priority );
@@ -648,11 +571,10 @@ AND args = %s
 				$sql_params[] = sprintf( '%%%s%%', $query['search'] );
 			}
 
-			$search_id = (int) $query['search'];
-			if ( $search_id ) {
-				$sql         .= ' OR a.action_id = %d OR a.claim_id = %d';
-				$sql_params[] = $search_id;
-				$sql_params[] = $search_id;
+			$search_claim_id = (int) $query['search'];
+			if ( $search_claim_id ) {
+				$sql         .= ' OR a.claim_id = %d';
+				$sql_params[] = $search_claim_id;
 			}
 
 			$sql .= ')';
@@ -1151,16 +1073,7 @@ AND args = %s
 	public function get_claim_count() {
 		global $wpdb;
 
-		$sql = "
-			SELECT COUNT(*)
-			FROM {$wpdb->actionscheduler_claims} c
-			WHERE EXISTS (
-				SELECT 1
-				FROM {$wpdb->actionscheduler_actions} a
-				WHERE a.claim_id = c.claim_id
-				AND a.status IN ( %s, %s )
-			)
-		";
+		$sql = "SELECT COUNT(DISTINCT claim_id) FROM {$wpdb->actionscheduler_actions} WHERE claim_id != 0 AND status IN ( %s, %s)";
 		$sql = $wpdb->prepare( $sql, array( self::STATUS_PENDING, self::STATUS_RUNNING ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 
 		return (int) $wpdb->get_var( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
@@ -1309,13 +1222,9 @@ AND args = %s
 
 		$updated = $wpdb->update(
 			$wpdb->actionscheduler_actions,
-			array(
-				'status'             => self::STATUS_FAILED,
-				'last_attempt_gmt'   => current_time( 'mysql', true ),
-				'last_attempt_local' => current_time( 'mysql' ),
-			),
+			array( 'status' => self::STATUS_FAILED ),
 			array( 'action_id' => $action_id ),
-			array( '%s', '%s', '%s' ),
+			array( '%s' ),
 			array( '%d' )
 		);
 		if ( empty( $updated ) ) {
@@ -1383,7 +1292,7 @@ AND args = %s
 				'last_attempt_local' => current_time( 'mysql' ),
 			),
 			array( 'action_id' => $action_id ),
-			array( '%s', '%s', '%s' ),
+			array( '%s' ),
 			array( '%d' )
 		);
 		if ( empty( $updated ) ) {

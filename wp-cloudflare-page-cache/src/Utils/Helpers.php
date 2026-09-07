@@ -31,14 +31,50 @@ class Helpers {
 	 * @return bool
 	 */
 	public static function has_cache_bypass_reason_header() {
-		$headers = array_map(
-			function ( $header ) {
-				return strstr( $header, ':', true );
-			},
-			headers_list()
-		);
+		return null !== self::get_cache_bypass_reason_header();
+	}
 
-		return in_array( self::BYPASS_CACHE_REASON_HEADER, $headers, true );
+	/**
+	 * Get the reason recorded by the fallback cache for bypassing the current request.
+	 *
+	 * @return string|null
+	 */
+	public static function get_cache_bypass_reason_header(): ?string {
+		foreach ( headers_list() as $header ) {
+			$parts = explode( ':', $header, 2 );
+
+			if ( 2 === count( $parts ) && 0 === strcasecmp( trim( $parts[0] ), self::BYPASS_CACHE_REASON_HEADER ) ) {
+				return trim( $parts[1] );
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Decide whether a fallback-cache rejection must also bypass shared edge caches.
+	 *
+	 * The trailing-slash check historically only prevented disk caching. On sites whose
+	 * canonical permalink structure is intentionally unslashed (including plain
+	 * permalinks), preserve that edge-cache behaviour. Every other fallback rejection
+	 * represents a response that must not be stored in a shared cache.
+	 *
+	 * @param string|null $reason Fallback-cache bypass reason.
+	 *
+	 * @return bool
+	 */
+	public static function should_demote_fallback_cache_bypass( ?string $reason ): bool {
+		if ( null === $reason ) {
+			return false;
+		}
+
+		if ( ! in_array( $reason, [ 'Not a slashed URL', 'URL Without Trailing Slash' ], true ) ) {
+			return true;
+		}
+
+		$permalink_structure = (string) get_option( 'permalink_structure', '' );
+
+		return '' !== $permalink_structure && '/' === substr( $permalink_structure, -1 );
 	}
 
 	/**
