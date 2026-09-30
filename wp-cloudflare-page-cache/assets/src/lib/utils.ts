@@ -103,3 +103,12 @@ export const formatNumberToReadable = (number: number) => {
 export const getBlackFridayBannerMarkup = () => {
   return window.SPCBlackFridayBanner ? window.SPCBlackFridayBanner : null;
 }
+
+/**
+ * Get the Themeisle SDK "Connect your AI agent" notice markup captured before the app mounted.
+ *
+ * @returns The notice's inner markup or null if it was not rendered.
+ */
+export const getAiConnectNoticeMarkup = () => {
+  return window.SPCAiConnectNotice ? window.SPCAiConnectNotice : null;
+}

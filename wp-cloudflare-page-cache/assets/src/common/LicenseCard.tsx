@@ -59,7 +59,7 @@ const LicenseCard = () => {
 
     toast.success(response.message, { description: activationResponse.message });
 
-    updateSettings(activationResponse.data.settings);
+    updateSettings(activationResponse.data.settings, activationResponse.data.meta);
 
     lockAsync(false);
     setEnablingCache(false);

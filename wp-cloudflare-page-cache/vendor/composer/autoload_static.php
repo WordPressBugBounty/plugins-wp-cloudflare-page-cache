@@ -4,7 +4,7 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInit9e65b6d1d47537141e950fa9602258e5
+class ComposerStaticInit2630a01fe967e7d9c986d3b3457f32ba
 {
     public static $files = array (
         'f3e742daca6ecc1d4ff0a2b5cf792c05' => __DIR__ . '/..' . '/codeinwp/themeisle-sdk/load.php',
@@ -37,6 +37,7 @@ class ComposerStaticInit9e65b6d1d47537141e950fa9602258e5
         'SPC\\Entities\\Google_Font' => __DIR__ . '/../..' . '/src/Entities/Google_Font.php',
         'SPC\\Loader' => __DIR__ . '/../..' . '/src/Loader.php',
         'SPC\\Models\\Asset_Rules' => __DIR__ . '/../..' . '/src/Models/Asset_Rules.php',
+        'SPC\\Modules\\Abilities' => __DIR__ . '/../..' . '/src/Modules/Abilities.php',
         'SPC\\Modules\\Admin' => __DIR__ . '/../..' . '/src/Modules/Admin.php',
         'SPC\\Modules\\Assets_Manager' => __DIR__ . '/../..' . '/src/Modules/Assets_Manager.php',
         'SPC\\Modules\\Cache_Buster' => __DIR__ . '/../..' . '/src/Modules/Cache_Buster.php',
@@ -117,9 +118,9 @@ class ComposerStaticInit9e65b6d1d47537141e950fa9602258e5
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInit9e65b6d1d47537141e950fa9602258e5::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInit9e65b6d1d47537141e950fa9602258e5::$prefixDirsPsr4;
-            $loader->classMap = ComposerStaticInit9e65b6d1d47537141e950fa9602258e5::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInit2630a01fe967e7d9c986d3b3457f32ba::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInit2630a01fe967e7d9c986d3b3457f32ba::$prefixDirsPsr4;
+            $loader->classMap = ComposerStaticInit2630a01fe967e7d9c986d3b3457f32ba::$classMap;
 
         }, null, ClassLoader::class);
     }

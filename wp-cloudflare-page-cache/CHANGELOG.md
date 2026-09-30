@@ -1,3 +1,12 @@
+#####   Version 5.3.6 (2026-09-30)
+
+- Added active fallback cache status to WP-CLI reports.
+- Fixed the Cache Engine status when the disk cache cannot run.
+- Added AI agent support: let AI assistants read and change your Super Page Cache settings and purge the cache.
+- Fixed image lazy loading when no page profile ID is available.
+- Updated dependencies
+- Added AI agent support: let AI assistants read and change your Super Page Cache settings and purge the cache.
+
 #####   Version 5.3.5 (2026-09-07)
 
 - Fixed cache exclusions for exact file paths.

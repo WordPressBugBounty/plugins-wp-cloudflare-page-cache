@@ -12,6 +12,7 @@ return array(
     'SPC\\Entities\\Google_Font' => $baseDir . '/src/Entities/Google_Font.php',
     'SPC\\Loader' => $baseDir . '/src/Loader.php',
     'SPC\\Models\\Asset_Rules' => $baseDir . '/src/Models/Asset_Rules.php',
+    'SPC\\Modules\\Abilities' => $baseDir . '/src/Modules/Abilities.php',
     'SPC\\Modules\\Admin' => $baseDir . '/src/Modules/Admin.php',
     'SPC\\Modules\\Assets_Manager' => $baseDir . '/src/Modules/Assets_Manager.php',
     'SPC\\Modules\\Cache_Buster' => $baseDir . '/src/Modules/Cache_Buster.php',

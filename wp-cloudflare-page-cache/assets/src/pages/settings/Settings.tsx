@@ -1,3 +1,4 @@
+import AiConnectNotice from "@/common/AiConnectNotice";
 import BlackFridayBanner from "@/common/BlackFridayBanner";
 import Separator from "@/common/Separator";
 import { useNav } from "@/hooks/use-nav";
@@ -32,6 +33,7 @@ const Settings = () => {
 
       <Container className="py-8 pb-16">
         <BlackFridayBanner />
+        <AiConnectNotice />
 
         <div className="grid lg:grid-cols-12 gap-6">
           <Content className="lg:col-span-8 grid gap-6 lg:gap-10 items-start" />

@@ -140,6 +140,29 @@ class SDK_Integrations {
 			'upgrade_text'     => __( 'Upgrade to PRO', 'wp-cloudflare-page-cache' ),
 		];
 	}
+
+	/**
+	 * Get the AI Connect metadata.
+	 *
+	 * @return array{name: string, notice_cases: string[], prompts: string[], ability_prefix: string}
+	 */
+	public function get_ai_connect_metadata() {
+		return [
+			'name'           => 'Super Page Cache',
+			'notice_cases'   => [
+				__( 'tune your caching for maximum performance', 'wp-cloudflare-page-cache' ),
+				__( 'keep your cart and checkout always fresh', 'wp-cloudflare-page-cache' ),
+				__( 'warm the cache before a traffic spike', 'wp-cloudflare-page-cache' ),
+			],
+			'prompts'        => [
+				__( 'I just updated my pricing page. Purge its cache.', 'wp-cloudflare-page-cache' ),
+				__( 'Never cache my cart, checkout and account pages in Super Page Cache.', 'wp-cloudflare-page-cache' ),
+				__( 'Preload the cache for my whole site so every page is fast for the first visitor.', 'wp-cloudflare-page-cache' ),
+			],
+			'ability_prefix' => 'spc',
+		];
+	}
+
 	/**
 	 * Get the logger data.
 	 *

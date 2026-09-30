@@ -35,17 +35,19 @@ interface SettingsState {
   cloudflareConnected: boolean;
   invalidEncryptionState: boolean;
   advancedCacheWriteFailed: boolean;
+  cacheEngineOperational: boolean;
 }
 
 type SettingsAction =
   | { type: 'UPDATE_SETTING'; payload: { key: string; value: SettingValueType } }
-  | { type: 'UPDATE_SETTINGS'; payload: { settings: SettingType; meta?: Partial<Pick<SettingsState, 'cloudflareConnected' | 'invalidEncryptionState' | 'advancedCacheWriteFailed'>> } };
+  | { type: 'UPDATE_SETTINGS'; payload: { settings: SettingType; meta?: Partial<Pick<SettingsState, 'cloudflareConnected' | 'invalidEncryptionState' | 'advancedCacheWriteFailed' | 'cacheEngineOperational'>> } };
 
 const initialState: SettingsState = {
   settings: localizedSettings,
   cloudflareConnected: Boolean(window.SPCDash.cloudflareConnected),
   invalidEncryptionState: Boolean(window.SPCDash.invalidEncryptionState),
   advancedCacheWriteFailed: Boolean(window.SPCDash.advancedCacheWriteFailed),
+  cacheEngineOperational: Boolean(window.SPCDash.cacheEngineOperational),
 }
 
 const settingsReducer = (state: SettingsState, action: SettingsAction): SettingsState => {
@@ -72,6 +74,7 @@ const settingsReducer = (state: SettingsState, action: SettingsAction): Settings
       cloudflareConnected: action.payload.meta?.cloudflareConnected ?? state.cloudflareConnected,
       invalidEncryptionState: action.payload.meta?.invalidEncryptionState ?? state.invalidEncryptionState,
       advancedCacheWriteFailed: action.payload.meta?.advancedCacheWriteFailed ?? state.advancedCacheWriteFailed,
+      cacheEngineOperational: action.payload.meta?.cacheEngineOperational ?? state.cacheEngineOperational,
     };
   default:
     return state;
@@ -105,9 +108,10 @@ const useSettingsStore = () => {
     settings: state.settings,
     invalidEncryptionState: state.invalidEncryptionState,
     advancedCacheWriteFailed: state.advancedCacheWriteFailed,
+    cacheEngineOperational: state.cacheEngineOperational,
     pageCacheOn: Boolean(state.settings.cf_fallback_cache),
     updateSetting: (key: string, value: SettingValueType) => dispatch({ type: 'UPDATE_SETTING', payload: { key, value } }),
-    updateSettings: (settings: SettingType, meta?: Partial<Pick<SettingsState, 'cloudflareConnected' | 'invalidEncryptionState' | 'advancedCacheWriteFailed'>>) => dispatch({ type: 'UPDATE_SETTINGS', payload: { settings, meta } }),
+    updateSettings: (settings: SettingType, meta?: Partial<Pick<SettingsState, 'cloudflareConnected' | 'invalidEncryptionState' | 'advancedCacheWriteFailed' | 'cacheEngineOperational'>>) => dispatch({ type: 'UPDATE_SETTINGS', payload: { settings, meta } }),
     cloudflareConnected: state.cloudflareConnected,
     getSettingMeta,
     isSettingOverridden: (key: string) => Boolean(getSettingMeta(key)?.overridden),

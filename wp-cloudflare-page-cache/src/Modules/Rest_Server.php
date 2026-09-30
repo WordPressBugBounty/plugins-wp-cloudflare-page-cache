@@ -1701,12 +1701,14 @@ class Rest_Server implements Module_Interface {
 	 * @return array<string, bool>
 	 */
 	private function get_dashboard_state_payload(): array {
-		$settings = Settings_Store::get_instance();
+		$settings                    = Settings_Store::get_instance();
+		$advanced_cache_write_failed = false !== get_option( Constants::KEY_ADVANCED_CACHE_WRITE_FAILED, false );
 
 		return [
 			'cloudflareConnected'      => $settings->is_cloudflare_connected(),
 			'invalidEncryptionState'   => $settings->should_show_invalid_encryption_notice(),
-			'advancedCacheWriteFailed' => false !== get_option( Constants::KEY_ADVANCED_CACHE_WRITE_FAILED, false ),
+			'advancedCacheWriteFailed' => $advanced_cache_write_failed,
+			'cacheEngineOperational'   => $settings->is_cache_engine_operational( null, $advanced_cache_write_failed ),
 		];
 	}
 

@@ -171,14 +171,17 @@ html body[data-scroll-locked] {
   border-right-color: #121212 !important;
 }
 
+/* Scoped to the dashboard: this stylesheet loads on the whole admin page, and
+   an unscoped `!important` reset here also restyles other plugins' dialogs
+   (the Themeisle SDK modal, for one). */
 @layer reset {
-  p,
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
+  #spc-dashboard p,
+  #spc-dashboard h1,
+  #spc-dashboard h2,
+  #spc-dashboard h3,
+  #spc-dashboard h4,
+  #spc-dashboard h5,
+  #spc-dashboard h6 {
     @apply m-0 text-foreground;
   }
 
@@ -186,11 +189,11 @@ html body[data-scroll-locked] {
     @apply bg-background text-foreground text-base;
   }
 
-  a,
-  button {
+  #spc-dashboard a,
+  #spc-dashboard button {
     @apply cursor-pointer;
   }
-  p {
+  #spc-dashboard p {
     @apply text-base;
   }
 
@@ -243,6 +246,35 @@ html body[data-scroll-locked] {
   }
 }
 @layer reset {
+  /* The SDK's "Connect your AI agent" notice, rendered inside the page: a filled button so it reads as the call to action. */
+  #spc-dashboard .ti-ai-notice .button {
+    background: #2271b1 !important;
+    border-color: #2271b1 !important;
+    color: #fff !important;
+  }
+  #spc-dashboard .ti-ai-notice .button:hover,
+  #spc-dashboard .ti-ai-notice .button:focus {
+    background: #135e96 !important;
+    border-color: #135e96 !important;
+  }
+  #spc-dashboard .ti-ai-notice .button .ti-ai-sparkle {
+    color: #fff !important;
+  }
+  #spc-dashboard .ti-ai-notice .notice-dismiss {
+    top: -6px !important;
+    right: -8px !important;
+    color: inherit !important;
+  }
+  #spc-dashboard .ti-ai-notice .notice-dismiss:before {
+    color: inherit !important;
+  }
+  /* The dark class sits on the page wrapper inside #spc-dashboard. */
+  #spc-dashboard .dark .ti-ai-notice,
+  #spc-dashboard .dark .ti-ai-notice p,
+  #spc-dashboard .dark .ti-ai-notice .notice-dismiss:before {
+    color: #e6edf3 !important;
+  }
+
   .themeisle-sale-container {
     @apply flex flex-col lg:flex-row justify-center gap-4 p-0 text-center lg:text-left;
   }

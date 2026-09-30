@@ -4,6 +4,7 @@ import Button from "@/components/Button";
 import Card, { CardContent, CardHeader } from "@/components/Card";
 import Notice from "@/components/Notice";
 import Container from "@/layout/Container";
+import AiConnectNotice from "@/common/AiConnectNotice";
 import Header from "@/layout/Header";
 import PageWrap from "@/layout/PageWrap";
 import { spcApi } from "@/lib/api";
@@ -219,6 +220,7 @@ const StartWizard = () => {
       <Header backButton={false} />
 
       <Container className="max-w-5xl py-8">
+        <AiConnectNotice />
         <TransitionWrapper from="bottom">
           <OnboardingCard />
         </TransitionWrapper>

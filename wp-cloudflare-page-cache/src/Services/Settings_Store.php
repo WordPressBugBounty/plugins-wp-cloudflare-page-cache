@@ -53,6 +53,11 @@ class Settings_Store {
 	private static $_instance = null;
 
 	/**
+	 * @var bool
+	 */
+	private bool $advanced_cache_drop_in_repaired = false;
+
+	/**
 	 * @var array
 	 */
 	private $config;
@@ -261,6 +266,78 @@ class Settings_Store {
 	}
 
 	/**
+	 * Check whether the current settings require the advanced-cache.php drop-in
+	 * to be present and active for disk caching to work.
+	 *
+	 * @return bool
+	 */
+	public function is_advanced_cache_drop_in_required(): bool {
+		return $this->is_cache_enabled()
+			&& (bool) $this->get( Constants::SETTING_ENABLE_FALLBACK_CACHE )
+			&& ! (bool) $this->get( Constants::SETTING_FALLBACK_CACHE_CURL );
+	}
+
+	/**
+	 * Record that Fallback_Cache successfully (re)activated the drop-in during
+	 * this request, so the health check below doesn't have to trust stale
+	 * bootstrap-time constants for a repair it can otherwise observe directly.
+	 *
+	 * @return void
+	 */
+	public function mark_advanced_cache_drop_in_repaired(): void {
+		$this->advanced_cache_drop_in_repaired = true;
+	}
+
+	/**
+	 * Check whether the disk cache is actually operational: either the drop-in
+	 * is not required by the current settings, or it is required, present,
+	 * with no recorded write failure, and either running the current version
+	 * with WP_CACHE on, or was just successfully repaired this request (in
+	 * which case the bootstrap-time constants can't yet reflect the repair).
+	 *
+	 * @param bool|null $drop_in_exists Whether wp-content/advanced-cache.php is a file.
+	 * @param bool|null $write_failed   Whether the last drop-in activation attempt failed.
+	 *
+	 * @return bool
+	 */
+	public function is_advanced_cache_drop_in_healthy( ?bool $drop_in_exists = null, ?bool $write_failed = null ): bool {
+		if ( ! $this->is_advanced_cache_drop_in_required() ) {
+			return true;
+		}
+
+		$drop_in_exists = $drop_in_exists ?? is_file( WP_CONTENT_DIR . '/advanced-cache.php' );
+		$write_failed   = $write_failed ?? ( false !== get_option( Constants::KEY_ADVANCED_CACHE_WRITE_FAILED, false ) );
+
+		if ( ! $drop_in_exists || $write_failed ) {
+			return false;
+		}
+
+		$active_version_healthy = defined( 'SWCFPC_ADVANCED_CACHE_VERSION' ) && SWCFPC_VERSION === SWCFPC_ADVANCED_CACHE_VERSION
+			&& defined( 'WP_CACHE' ) && (bool) WP_CACHE;
+
+		return $active_version_healthy || $this->advanced_cache_drop_in_repaired;
+	}
+
+	/**
+	 * Whether the cache engine is actually enabled and operational: both the
+	 * top-level and fallback-cache settings are on, and (when it applies) the
+	 * advanced-cache.php drop-in is healthy. Ships as one boolean so callers
+	 * never have to re-derive this rule from the individual settings.
+	 *
+	 * @param bool|null $drop_in_exists Whether wp-content/advanced-cache.php is a file.
+	 * @param bool|null $write_failed   Whether the last drop-in activation attempt failed.
+	 *
+	 * @return bool
+	 */
+	public function is_cache_engine_operational( ?bool $drop_in_exists = null, ?bool $write_failed = null ): bool {
+		if ( ! $this->is_cache_enabled() || ! (bool) $this->get( Constants::SETTING_ENABLE_FALLBACK_CACHE ) ) {
+			return false;
+		}
+
+		return $this->is_advanced_cache_drop_in_healthy( $drop_in_exists, $write_failed );
+	}
+
+	/**
 	 * Build the Cache-Control header value from configured max-age settings.
 	 *
 	 * @return string
@@ -449,11 +526,12 @@ class Settings_Store {
 	 * @return $this
 	 */
 	public function reset() {
-		$this->config                      = [];
-		$this->stored_config               = [];
-		$this->changed_settings            = [];
-		$this->unreadable_encrypted_fields = [];
-		$this->encryption_state_valid      = true;
+		$this->config                          = [];
+		$this->stored_config                   = [];
+		$this->changed_settings                = [];
+		$this->unreadable_encrypted_fields     = [];
+		$this->encryption_state_valid          = true;
+		$this->advanced_cache_drop_in_repaired = false;
 
 		return $this;
 	}

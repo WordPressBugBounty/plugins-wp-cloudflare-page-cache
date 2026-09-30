@@ -12,6 +12,7 @@ import SidebarSystemStatus from "./SidebarSystemStatus";
 import SidebarUpsellCard from "./SidebarUpsellCard";
 import TransitionWrapper from "@/common/TransitionWrapper";
 import BlackFridayBanner from "@/common/BlackFridayBanner";
+import AiConnectNotice from "@/common/AiConnectNotice";
 import PluginConflictsNotice from "./PluginConflictsNotice";
 import { DashboardProvider } from "@/store/dashboardStore";
 
@@ -34,6 +35,7 @@ const DashboardContent = () => {
 
         <Container className="py-8">
           <BlackFridayBanner />
+          <AiConnectNotice />
 
           {unlicensedPro && (
             <TransitionWrapper from="top">

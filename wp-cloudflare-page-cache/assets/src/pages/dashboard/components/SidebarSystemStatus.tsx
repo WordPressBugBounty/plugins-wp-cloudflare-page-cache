@@ -5,15 +5,15 @@ import { __ } from "@wordpress/i18n";
 
 const SidebarSystemStatus = () => {
   const { hasOverdueJobs } = window.SPCDash;
-  const { settings, cloudflareConnected } = useSettingsStore();
+  const { cloudflareConnected, cacheEngineOperational } = useSettingsStore();
 
   const data = [
     {
       label: __('Cache Engine', 'wp-cloudflare-page-cache'),
-      value: settings.cf_fallback_cache ?
+      value: cacheEngineOperational ?
         __('Enabled', 'wp-cloudflare-page-cache') :
         __('Disabled', 'wp-cloudflare-page-cache'),
-      color: settings.cf_fallback_cache ?
+      color: cacheEngineOperational ?
         'text-green-600 dark:text-green-400' :
         'text-destructive'
     },

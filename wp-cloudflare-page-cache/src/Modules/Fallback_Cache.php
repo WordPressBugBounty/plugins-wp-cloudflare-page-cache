@@ -197,6 +197,7 @@ class Fallback_Cache implements Module_Interface {
 		}
 
 		$this->clear_advanced_cache_enable_failure();
+		Settings_Store::get_instance()->mark_advanced_cache_drop_in_repaired();
 		do_action( 'swcfpc_advanced_cache_after_enable' );
 
 		return true;

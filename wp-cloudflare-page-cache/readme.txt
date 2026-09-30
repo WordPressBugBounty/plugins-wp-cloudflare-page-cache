@@ -1,10 +1,10 @@
 === Super Page Cache – Cloudflare Cache, Page Speed & Core Web Vitals ===
 Contributors: themeisle, salvatorefresta, isaumya
-Tags: cache, cloudflare, pagespeed, performance, cdn
+Tags: cache, cloudflare, pagespeed, speed optimization, cdn
 Requires at least: 6.5
 Requires PHP: 7.4
 Tested up to: 7.1
-Stable tag: 5.3.5
+Stable tag: 5.3.6
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -39,6 +39,8 @@ Supports **Free, Pro, and Enterprise** Cloudflare plans with auto-purging, cron 
 
 #### 🚀 Complete Caching Solution
 
+Super Page Cache combines full page caching, disk caching, and browser caching, with lazy loading for images, videos, and iframes.
+
 - **Disk Caching:** Lightning-fast server caching with Cloudflare fallback
 - **CDN Integration:** Optional Cloudflare CDN with 200+ edge locations
 - **Cache Controls:** Exclude cookies, query params, URIs, AMP, feeds, REST API
@@ -48,6 +50,8 @@ Supports **Free, Pro, and Enterprise** Cloudflare plans with auto-purging, cron 
 - **Performance Metrics:** Track cache effectiveness
 
 #### ⚡ Performance Optimization
+
+Speed optimization tools remove unused CSS, remove unused JS, and handle Google Fonts optimization by serving local Google Fonts.
 
 - **Google Fonts:** Combine and serve locally for better Web Vitals
 - **Lazy Loading:** Images, videos, iframes, background images
@@ -191,15 +195,14 @@ Check the FAQ tab in plugin settings first. If needed, enable log mode and send 
 
 == Changelog ==
 
-#####   Version 5.3.5 (2026-09-07)
+#####   Version 5.3.6 (2026-09-30)
 
-- Fixed cache exclusions for exact file paths.
-- Fixed crashes when older cache drop-in files remain after plugin updates.
-- Fixed doctor checks for missing, old, or disabled disk cache files.
-- Fixed missing administrator warnings when the disk cache cannot be activated.
-- Fixed filtered pages remaining cached after the disk cache rejected their URLs.
-- Fixed fallback cache serving query page content from clean page URLs.
-- Fixed update errors on unsupported WordPress versions.
+- Added active fallback cache status to WP-CLI reports.
+- Fixed the Cache Engine status when the disk cache cannot run.
+- Added AI agent support: let AI assistants read and change your Super Page Cache settings and purge the cache.
+- Fixed image lazy loading when no page profile ID is available.
+- Updated dependencies
+- Added AI agent support: let AI assistants read and change your Super Page Cache settings and purge the cache.
 
 
 

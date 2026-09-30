@@ -2,6 +2,7 @@
 
 namespace SPC;
 
+use SPC\Modules\Abilities;
 use SPC\Modules\Admin;
 use SPC\Modules\Assets_Manager;
 use SPC\Modules\Cache_Buster;
@@ -75,6 +76,7 @@ class Loader {
 		$this->modules['metrics_cleanup']          = new Metrics_Cleanup();
 		$this->modules['assets_manager']           = new Assets_Manager();
 		$this->modules['page_settings_metabox']    = new Page_Settings_Metabox();
+		$this->modules['abilities']                = new Abilities();
 
 		if ( Settings_Store::get_instance()->get( Constants::SETTING_ENABLE_DATABASE_OPTIMIZATION ) ) {
 			$this->modules['database_optimization'] = new Database_Optimization();

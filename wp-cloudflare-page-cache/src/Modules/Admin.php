@@ -34,12 +34,17 @@ class Admin implements Module_Interface {
 		add_action( 'admin_init', [ $this, 'redirect_to_settings' ] );
 		add_action( 'admin_notices', [ $this, 'failed_rule_update_notice' ] );
 		add_action( 'admin_notices', [ $this, 'credentials_encryption_notice' ] );
+		add_action( 'admin_notices', [ $this, 'advanced_cache_write_failure_notice' ] );
 		add_filter( 'all_plugins', [ $this, 'filter_conflicting_plugins' ] );
 
 		add_filter( $this->sdk_service->get_product_key() . '_logger_data', [ $this->sdk_service, 'get_logger_data' ] );
 		add_filter(
 			$this->sdk_service->get_product_key() . '_about_us_metadata',
 			[ $this->sdk_service, 'get_about_us_metadata' ]
+		);
+		add_filter(
+			$this->sdk_service->get_product_key() . '_ai_connect_metadata',
+			[ $this->sdk_service, 'get_ai_connect_metadata' ]
 		);
 
 		add_action( 'init', [ Logger::class, 'download_handler' ] );
@@ -206,6 +211,37 @@ class Admin implements Module_Interface {
 				<?php esc_html_e( 'Super Page Cache could not decrypt your stored Cloudflare credentials. This usually means your WordPress secret keys changed.', 'wp-cloudflare-page-cache' ); ?>
 				<a href="<?php echo esc_url( $cloudflare_settings_url ); ?>">
 					<?php esc_html_e( 'Open Cloudflare settings and enter your credentials again.', 'wp-cloudflare-page-cache' ); ?>
+				</a>
+			</p>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Display a persistent notice when the disk-cache drop-in cannot be activated.
+	 *
+	 * @return void
+	 */
+	public function advanced_cache_write_failure_notice() {
+		$screen = get_current_screen();
+
+		// The plugin's own screens surface this state inside the dashboard app.
+		if ( ! $screen || strpos( $screen->id, 'super-page-cache' ) !== false ) {
+			return;
+		}
+
+		if ( ! current_user_can( 'manage_options' ) || ! get_option( Constants::KEY_ADVANCED_CACHE_WRITE_FAILED, false ) ) {
+			return;
+		}
+
+		$cache_settings_url = admin_url( 'admin.php?page=' . Dashboard::PAGE_SLUG . '-settings#general' );
+
+		?>
+		<div class="notice notice-error spc-advanced-cache-error">
+			<p>
+				<?php esc_html_e( 'Super Page Cache could not activate the disk fallback cache because advanced-cache.php or wp-config.php could not be updated. Check their file permissions, or add define( \'WP_CACHE\', true ); to wp-config.php manually if your host does not allow the plugin to edit it, then save the cache settings again.', 'wp-cloudflare-page-cache' ); ?>
+				<a href="<?php echo esc_url( $cache_settings_url ); ?>">
+					<?php esc_html_e( 'Review cache settings.', 'wp-cloudflare-page-cache' ); ?>
 				</a>
 			</p>
 		</div>

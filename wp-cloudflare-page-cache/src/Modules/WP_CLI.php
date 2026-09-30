@@ -28,6 +28,10 @@ class WP_CLI extends \WP_CLI_Command implements Module_Interface {
 	/**
 	 * Show the current plugin status.
 	 *
+	 * `fallback_cache_enabled` reports configured intent; `fallback_cache_active`
+	 * reports whether the fallback cache is effectively caching. Run `cfcache doctor`
+	 * for the reason when the two disagree.
+	 *
 	 * ## OPTIONS
 	 *
 	 * [--format=<format>]
@@ -42,9 +46,23 @@ class WP_CLI extends \WP_CLI_Command implements Module_Interface {
 	 * @when after_wp_load
 	 */
 	public function status( array $_args, array $assoc_args ): void {
-		$settings       = Settings_Store::get_instance();
-		$cloudflare     = new Cloudflare_Integration();
-		$format         = $assoc_args['format'] ?? 'table';
+		$format = $assoc_args['format'] ?? 'table';
+
+		$this->format_assoc_output(
+			$this->build_status_payload( Settings_Store::get_instance(), new Cloudflare_Integration() ),
+			$format
+		);
+	}
+
+	/**
+	 * Build the field set reported by the status command.
+	 *
+	 * @param Settings_Store        $settings   Settings service.
+	 * @param Cloudflare_Integration $cloudflare Cloudflare integration service.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function build_status_payload( Settings_Store $settings, Cloudflare_Integration $cloudflare ): array {
 		$preloader_lock = (int) get_option( 'swcfpc_preloader_lock', 0 );
 		$lock_age       = $preloader_lock > 0 ? time() - $preloader_lock : 0;
 		$zone_list      = $settings->get( Constants::ZONE_ID_LIST );
@@ -57,7 +75,17 @@ class WP_CLI extends \WP_CLI_Command implements Module_Interface {
 			)
 		);
 
-		$status = [
+		$fallback_state  = $this->get_advanced_cache_runtime_state( $settings );
+		$fallback_active = $this->is_fallback_cache_active(
+			$fallback_state['configured'],
+			$fallback_state['cache_enabled'],
+			$fallback_state['curl_mode'],
+			$fallback_state['drop_in_exists'],
+			$fallback_state['active_version'],
+			$fallback_state['wp_cache_enabled']
+		);
+
+		return [
 			'plugin_version'                        => SWCFPC_VERSION,
 			'cloudflare_connected'                  => $settings->is_cloudflare_connected(),
 			'cloudflare_api_enabled'                => $cloudflare->is_enabled(),
@@ -67,6 +95,7 @@ class WP_CLI extends \WP_CLI_Command implements Module_Interface {
 			'cache_rule_configured'                 => $cloudflare->has_cache_rule(),
 			'page_cache_enabled'                    => $settings->is_cache_enabled(),
 			'fallback_cache_enabled'                => (bool) $settings->get( Constants::SETTING_ENABLE_FALLBACK_CACHE ),
+			'fallback_cache_active'                 => $fallback_active,
 			'preloader_enabled'                     => (bool) $settings->get( Constants::SETTING_ENABLE_PRELOADER ),
 			'preloader_running'                     => $preloader_lock > 0 && $lock_age <= 15 * MINUTE_IN_SECONDS,
 			'preloader_lock_age'                    => $preloader_lock > 0 ? $lock_age : '',
@@ -75,8 +104,6 @@ class WP_CLI extends \WP_CLI_Command implements Module_Interface {
 			'cloudflare_credentials_need_attention' => $settings->has_unreadable_active_cloudflare_credentials(),
 			'wp_config_overrides'                   => $override_count,
 		];
-
-		$this->format_assoc_output( $status, $format );
 	}
 
 	/**
@@ -188,16 +215,95 @@ class WP_CLI extends \WP_CLI_Command implements Module_Interface {
 	 * @return array<int, array<string, string>>
 	 */
 	private function get_advanced_cache_health_checks( Settings_Store $settings ): array {
-		$required = $settings->is_cache_enabled()
-			&& (bool) $settings->get( Constants::SETTING_ENABLE_FALLBACK_CACHE )
-			&& ! (bool) $settings->get( Constants::SETTING_FALLBACK_CACHE_CURL );
+		$state = $this->get_advanced_cache_runtime_state( $settings );
 
 		return $this->build_advanced_cache_health_checks(
-			$required,
-			is_file( WP_CONTENT_DIR . '/advanced-cache.php' ),
-			defined( 'SWCFPC_ADVANCED_CACHE_VERSION' ) ? (string) SWCFPC_ADVANCED_CACHE_VERSION : null,
-			defined( 'WP_CACHE' ) && (bool) WP_CACHE
+			$state['required'],
+			$state['drop_in_exists'],
+			$state['active_version'],
+			$state['wp_cache_enabled']
 		);
+	}
+
+	/**
+	 * Resolve the observed advanced disk-cache runtime state.
+	 *
+	 * Shared by the status and doctor commands so the two can never disagree about
+	 * whether the drop-in is required and whether it is healthy.
+	 *
+	 * @param Settings_Store $settings Settings service.
+	 *
+	 * @return array{configured: bool, cache_enabled: bool, curl_mode: bool, required: bool, drop_in_exists: bool, active_version: string|null, wp_cache_enabled: bool}
+	 */
+	private function get_advanced_cache_runtime_state( Settings_Store $settings ): array {
+		$configured    = (bool) $settings->get( Constants::SETTING_ENABLE_FALLBACK_CACHE );
+		$cache_enabled = $settings->is_cache_enabled();
+		$curl_mode     = (bool) $settings->get( Constants::SETTING_FALLBACK_CACHE_CURL );
+
+		return [
+			'configured'       => $configured,
+			'cache_enabled'    => $cache_enabled,
+			'curl_mode'        => $curl_mode,
+			'required'         => $cache_enabled && $configured && ! $curl_mode,
+			'drop_in_exists'   => $this->advanced_cache_drop_in_exists(),
+			'active_version'   => $this->get_active_advanced_cache_version(),
+			'wp_cache_enabled' => $this->is_wp_cache_enabled(),
+		];
+	}
+
+	/**
+	 * Whether the advanced-cache.php drop-in is present in wp-content.
+	 *
+	 * @return bool
+	 */
+	protected function advanced_cache_drop_in_exists(): bool {
+		return is_file( WP_CONTENT_DIR . '/advanced-cache.php' );
+	}
+
+	/**
+	 * Version reported by the drop-in WordPress actually loaded, if any.
+	 *
+	 * @return string|null
+	 */
+	protected function get_active_advanced_cache_version(): ?string {
+		return defined( 'SWCFPC_ADVANCED_CACHE_VERSION' ) ? (string) SWCFPC_ADVANCED_CACHE_VERSION : null;
+	}
+
+	/**
+	 * Whether WP_CACHE is defined as enabled.
+	 *
+	 * @return bool
+	 */
+	protected function is_wp_cache_enabled(): bool {
+		return defined( 'WP_CACHE' ) && (bool) WP_CACHE;
+	}
+
+	/**
+	 * Whether the fallback cache is effectively caching, not merely configured.
+	 *
+	 * In drop-in mode advanced-cache.php is the only writer of cache entries, so a
+	 * missing, stale or never-loaded drop-in leaves disk caching inactive. cURL mode
+	 * writes from the plugin itself and needs no drop-in.
+	 *
+	 * @param bool        $configured       Whether the fallback cache setting is on.
+	 * @param bool        $cache_enabled    Whether the page cache is enabled.
+	 * @param bool        $curl_mode        Whether the cURL fallback cache mode is on.
+	 * @param bool        $drop_in_exists   Whether wp-content/advanced-cache.php is a file.
+	 * @param string|null $active_version   Version reported by the active SPC drop-in.
+	 * @param bool        $wp_cache_enabled Whether WP_CACHE is defined as enabled.
+	 *
+	 * @return bool
+	 */
+	private function is_fallback_cache_active( bool $configured, bool $cache_enabled, bool $curl_mode, bool $drop_in_exists, ?string $active_version, bool $wp_cache_enabled ): bool {
+		if ( ! $configured || ! $cache_enabled ) {
+			return false;
+		}
+
+		if ( $curl_mode ) {
+			return true;
+		}
+
+		return $drop_in_exists && SWCFPC_VERSION === $active_version && $wp_cache_enabled;
 	}
 
 	/**

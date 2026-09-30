@@ -49,6 +49,7 @@ declare global {
       cloudflareConnected: boolean;
       ruleNeedsRepair: boolean;
       advancedCacheWriteFailed: boolean;
+      cacheEngineOperational: boolean;
       hasOverdueJobs: boolean;
       homeURL: string;
       testCacheUrl: string;
@@ -73,6 +74,7 @@ declare global {
       };
     };
     SPCBlackFridayBanner?: string;
+    SPCAiConnectNotice?: string;
   }
 }
 
