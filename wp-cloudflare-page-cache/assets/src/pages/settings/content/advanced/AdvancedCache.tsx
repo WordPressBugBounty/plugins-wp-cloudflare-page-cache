@@ -55,8 +55,7 @@ const AdvancedCache = () => {
       id: 'cf_fallback_cache_http_response_code',
       type: 'toggle',
       label: __('Don\'t cache 4xx / 5xx responses', 'wp-cloudflare-page-cache'),
-      description: __('Exclude 4xx and 5xx HTTP error responses from being cached.', 'wp-cloudflare-page-cache'),
-      hide: !isToggleOn('cf_fallback_cache'),
+      description: __('Exclude 4xx and 5xx HTTP error responses from being cached, including static files such as images and the Cloudflare edge cache.', 'wp-cloudflare-page-cache'),
     },
     {
       id: 'cf_fallback_cache_prevent_cache_urls_without_trailing_slash',

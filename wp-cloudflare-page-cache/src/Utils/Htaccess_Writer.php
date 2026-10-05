@@ -55,15 +55,30 @@ class Htaccess_Writer {
 		}
 
 		if ( $settings->get( Constants::SETTING_BROWSER_CACHE_STATIC_ASSETS, 1 ) > 0 && $cache_enabled ) {
+			// Apache keeps the long-lived directives below off error responses, LiteSpeed does not.
+			// Without this an origin 429 ships the one-year lifetime and sticks in browser caches.
+			$skip_error_responses = $settings->get( Constants::SETTING_FALLBACK_CACHE_HTTP_RESPONSE_CODE, 1 ) > 0;
+			$error_response_rule  = 'Header always set Cache-Control "no-store, max-age=0" "expr=%{REQUEST_STATUS} >= 400"';
+
 			$htaccess_lines[] = '<FilesMatch "\.(css|js|pdf)$">';
 			$htaccess_lines[] = '<IfModule mod_headers.c>';
 			$htaccess_lines[] = 'Header set Cache-Control "public, must-revalidate, proxy-revalidate, immutable, max-age=2592000, stale-while-revalidate=86400, stale-if-error=604800"';
+
+			if ( $skip_error_responses ) {
+				$htaccess_lines[] = $error_response_rule;
+			}
+
 			$htaccess_lines[] = '</IfModule>';
 			$htaccess_lines[] = '</FilesMatch>';
 
 			$htaccess_lines[] = '<FilesMatch "\.(jpg|jpeg|png|gif|ico|eot|swf|svg|webp|avif|ttf|otf|woff|woff2|ogg|mp4|mpeg|avi|mkv|webm|mp3)$">';
 			$htaccess_lines[] = '<IfModule mod_headers.c>';
 			$htaccess_lines[] = 'Header set Cache-Control "public, must-revalidate, proxy-revalidate, immutable, max-age=31536000, stale-while-revalidate=86400, stale-if-error=604800"';
+
+			if ( $skip_error_responses ) {
+				$htaccess_lines[] = $error_response_rule;
+			}
+
 			$htaccess_lines[] = '</IfModule>';
 			$htaccess_lines[] = '</FilesMatch>';
 		}

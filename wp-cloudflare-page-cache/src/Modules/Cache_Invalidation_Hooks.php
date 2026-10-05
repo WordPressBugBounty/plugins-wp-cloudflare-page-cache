@@ -12,7 +12,7 @@ defined( 'ABSPATH' ) || die( 'Cheatin&#8217; uh?' );
  * Registers WP hooks that invalidate the cache when content changes.
  *
  * Owns: comment moderation, post create/edit/trash/delete, theme & menu changes,
- * Elementor save events, and the programmatic `swcfpc_purge_cache` action.
+ * Elementor save and generated-files clear events, and the programmatic `swcfpc_purge_cache` action.
  *
  * Each callback delegates to {@see Cache_Controller::purge_all()} or
  * {@see Cache_Controller::purge_urls()} (static facades) so the per-request
@@ -30,11 +30,13 @@ class Cache_Invalidation_Hooks implements Module_Interface {
 		add_action( 'comment_post', [ $this, 'purge_cache_when_new_comment_is_added' ], PHP_INT_MAX, 3 );
 		add_action( 'delete_comment', [ $this, 'purge_cache_when_comment_is_deleted' ], PHP_INT_MAX );
 
-		// Theme / menu / customizer / permalinks.
+		// Theme / menu / customizer / permalinks / page-builder generated CSS.
 		$theme_actions = [
 			'wp_update_nav_menu',
 			'update_option_theme_mods_' . get_option( 'stylesheet' ),
 			'avada_clear_dynamic_css_cache',
+			// Fires without a post ID after Elementor deletes the generated CSS of every page.
+			'elementor/core/files/clear_cache',
 			'switch_theme',
 			'customize_save_after',
 			'permalink_structure_changed',
@@ -52,7 +54,6 @@ class Cache_Invalidation_Hooks implements Module_Interface {
 			'edit_post',
 			'delete_attachment',
 			'elementor/editor/after_save',
-			'elementor/core/files/clear_cache',
 		];
 
 		foreach ( $post_actions as $action ) {
@@ -275,7 +276,8 @@ class Cache_Invalidation_Hooks implements Module_Interface {
 
 	/**
 	 * Purge the whole cache after a site-wide (theme-level) change: menu save, theme mods /
-	 * customizer save, theme switch, permalink structure change, Avada dynamic CSS flush.
+	 * customizer save, theme switch, permalink structure change, Avada dynamic CSS flush,
+	 * Elementor generated-files clear.
 	 *
 	 * These changes affect every page, so a whole-cache purge is the default even when the
 	 * "related pages only" auto-purge mode is enabled. Sites where that is too expensive
@@ -300,7 +302,8 @@ class Cache_Invalidation_Hooks implements Module_Interface {
 		 * @param bool   $should_purge     Whether to purge the whole cache. Default true.
 		 * @param string $current_action   The WordPress action that triggered the purge
 		 *                                 (e.g. `wp_update_nav_menu`, `customize_save_after`,
-		 *                                 `switch_theme`, `permalink_structure_changed`).
+		 *                                 `switch_theme`, `permalink_structure_changed`,
+		 *                                 `elementor/core/files/clear_cache`).
 		 * @param bool   $auto_purge_whole Whether the "purge whole cache" auto-purge mode is
 		 *                                 enabled. Return this value to only purge everything
 		 *                                 when that mode is on.

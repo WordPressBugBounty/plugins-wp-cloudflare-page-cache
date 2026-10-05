@@ -63,16 +63,52 @@ class Cloudflare_Client extends Cloudflare_Rule {
 	protected function get_rule_args(): array {
 		return [
 			'action'            => 'set_cache_settings',
-			'action_parameters' => [
-				'cache'       => true,
-				'browser_ttl' => array(
-					'mode' => 'respect_origin',
-				),
-			],
+			'action_parameters' => $this->get_rule_action_parameters(),
 			'description'       => $this->build_rule_description(),
 			'enabled'           => true,
 			'expression'        => $this->get_rule_expression(),
 		];
+	}
+
+	/**
+	 * Get the cache settings the rule applies.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function get_rule_action_parameters(): array {
+		$parameters = [
+			'cache'       => true,
+			'browser_ttl' => array(
+				'mode' => 'respect_origin',
+			),
+		];
+
+		if ( $this->settings_store->get( Constants::SETTING_FALLBACK_CACHE_HTTP_RESPONSE_CODE, 1 ) > 0 ) {
+			// Success responses keep respecting the origin TTL; error responses get a hard
+			// ceiling so a transient 4xx/5xx can never be held at the edge for the origin's
+			// static-asset lifetime.
+			$parameters['edge_ttl'] = array(
+				'mode'            => 'respect_origin',
+				'status_code_ttl' => array(
+					array(
+						'status_code_range' => array(
+							'from' => 400,
+							'to'   => 499,
+						),
+						'value'             => 0, // no-cache
+					),
+					array(
+						'status_code_range' => array(
+							'from' => 500,
+							'to'   => 599,
+						),
+						'value'             => -1, // no-store
+					),
+				),
+			);
+		}
+
+		return $parameters;
 	}
 
 	/**

@@ -8,6 +8,7 @@ use SPC\Models\Asset_Rules;
 use SPC\Services\Cloudflare_Integration;
 use SPC\Services\Settings_Store;
 use SPC\Utils\Helpers;
+use SPC\Utils\Htaccess_Writer;
 use SPC\Utils\Logger;
 
 if ( ! class_exists( 'SW_CLOUDFLARE_PAGECACHE' ) ) {
@@ -21,7 +22,7 @@ if ( ! class_exists( 'SW_CLOUDFLARE_PAGECACHE' ) ) {
 	define( 'SWCFPC_PLUGIN_FORUM_URL', 'https://wordpress.org/support/plugin/wp-cloudflare-page-cache/' );
 	define( 'SWCFPC_AUTH_MODE_API_KEY', 0 );
 	define( 'SWCFPC_AUTH_MODE_API_TOKEN', 1 );
-	define( 'SWCFPC_VERSION', '5.3.6' );
+	define( 'SWCFPC_VERSION', '5.3.7' );
 	if ( ! defined( 'SPC_METRICS_DIR' ) ) {
 		$home_url_parts = parse_url( home_url() );
 		$home_url_host  = ! empty( $home_url_parts['host'] ) ? $home_url_parts['host'] : '';
@@ -178,6 +179,12 @@ if ( ! class_exists( 'SW_CLOUDFLARE_PAGECACHE' ) ) {
 
 			if ( $cf_error ) {
 				Logger::log( 'upgrader::post_upgrade', sprintf( 'Cache rule sync error: %s', $cf_error ), true );
+			}
+
+			$htaccess_error = '';
+
+			if ( ! Htaccess_Writer::write( $htaccess_error ) ) {
+				Logger::log( 'upgrader::post_upgrade', sprintf( 'Server rules write error: %s', $htaccess_error ), true );
 			}
 
 			if ( defined( 'SWCFPC_ADVANCED_CACHE' ) ) {

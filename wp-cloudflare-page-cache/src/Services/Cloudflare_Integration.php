@@ -413,13 +413,75 @@ class Cloudflare_Integration {
 
 		$new_rule_expression = $this->client->get_rule_expression();
 
-		if ( $existing_rule['expression'] === $new_rule_expression ) {
+		$expression_matches = $existing_rule['expression'] === $new_rule_expression;
+		$settings_match     = $this->rule_has_expected_action_parameters( $existing_rule );
+
+		if ( $expression_matches && $settings_match ) {
 			Logger::log( 'cloudflare::update_cache_rule_if_diff', 'Cache rule is up to date.' );
 
 			return;
 		}
 
 		$this->sync_cache_rule( $error );
+	}
+
+	/**
+	 * Whether the live rule already applies every cache setting we build.
+	 *
+	 * Only the settings we own are compared, so extra keys Cloudflare adds on its side never
+	 * force a pointless rule update.
+	 *
+	 * @param array<string, mixed> $existing_rule The rule as returned by the Cloudflare API.
+	 *
+	 * @return bool
+	 */
+	private function rule_has_expected_action_parameters( $existing_rule ): bool {
+		$existing          = isset( $existing_rule['action_parameters'] ) ? $existing_rule['action_parameters'] : [];
+		$expected          = $this->client->get_rule_action_parameters();
+		$action_parameters = [ 'cache', 'browser_ttl', 'edge_ttl' ];
+
+		// Turning a setting off has to remove the parameter it added, not just stop sending it.
+		foreach ( $action_parameters as $key ) {
+			if ( ! isset( $expected[ $key ] ) && isset( $existing[ $key ] ) ) {
+				return false;
+			}
+		}
+
+		return $this->contains_expected_values( $existing, $expected );
+	}
+
+	/**
+	 * Recursively check that every expected key/value is present in the given value.
+	 *
+	 * @param mixed $actual The value returned by Cloudflare.
+	 * @param array<string, mixed> $expected The value we build.
+	 *
+	 * @return bool
+	 */
+	private function contains_expected_values( $actual, array $expected ): bool {
+		if ( ! is_array( $actual ) ) {
+			return false;
+		}
+
+		foreach ( $expected as $key => $value ) {
+			if ( ! array_key_exists( $key, $actual ) ) {
+				return false;
+			}
+
+			if ( is_array( $value ) ) {
+				if ( ! $this->contains_expected_values( $actual[ $key ], $value ) ) {
+					return false;
+				}
+
+				continue;
+			}
+
+			if ( $actual[ $key ] !== $value ) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	/**

@@ -1,3 +1,8 @@
+#####   Version 5.3.7 (2026-10-05)
+
+- Fixed static file errors being cached for too long.
+- Fixed stale page styles after Elementor clears generated files.
+
 #####   Version 5.3.6 (2026-09-30)
 
 - Added active fallback cache status to WP-CLI reports.

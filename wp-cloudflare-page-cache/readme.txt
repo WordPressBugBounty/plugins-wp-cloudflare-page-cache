@@ -4,7 +4,7 @@ Tags: cache, cloudflare, pagespeed, speed optimization, cdn
 Requires at least: 6.5
 Requires PHP: 7.4
 Tested up to: 7.1
-Stable tag: 5.3.6
+Stable tag: 5.3.7
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -195,14 +195,10 @@ Check the FAQ tab in plugin settings first. If needed, enable log mode and send 
 
 == Changelog ==
 
-#####   Version 5.3.6 (2026-09-30)
+#####   Version 5.3.7 (2026-10-05)
 
-- Added active fallback cache status to WP-CLI reports.
-- Fixed the Cache Engine status when the disk cache cannot run.
-- Added AI agent support: let AI assistants read and change your Super Page Cache settings and purge the cache.
-- Fixed image lazy loading when no page profile ID is available.
-- Updated dependencies
-- Added AI agent support: let AI assistants read and change your Super Page Cache settings and purge the cache.
+- Fixed static file errors being cached for too long.
+- Fixed stale page styles after Elementor clears generated files.
 
 
 

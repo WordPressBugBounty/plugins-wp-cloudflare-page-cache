@@ -40,12 +40,12 @@ msgid "https://themeisle.com"
 msgstr ""
 
 #. translators: %s: Name of deactivated plugin
-#: bootstrap.php:288
+#: bootstrap.php:295
 #, php-format
 msgid "%s plugin deactivated."
 msgstr ""
 
-#: bootstrap.php:291
+#: bootstrap.php:298
 msgid "The Premium version of Super Page Cache for Cloudflare does not require the Free version."
 msgstr ""
 
@@ -1018,36 +1018,36 @@ msgstr ""
 msgid "Blog Home Page"
 msgstr ""
 
-#: src/Services/Cloudflare_Client.php:114
+#: src/Services/Cloudflare_Client.php:150
 msgid "Unable to find Browser Cache TTL settings."
 msgstr ""
 
-#: src/Services/Cloudflare_Client.php:191
+#: src/Services/Cloudflare_Client.php:227
 #: src/Services/Cloudflare_Rule.php:162
 #: src/Services/Cloudflare_Rule.php:197
 msgid "No zone ID is available to use."
 msgstr ""
 
-#: src/Services/Cloudflare_Client.php:226
-#: src/Services/Cloudflare_Client.php:233
 #: src/Services/Cloudflare_Client.php:262
+#: src/Services/Cloudflare_Client.php:269
+#: src/Services/Cloudflare_Client.php:298
 msgid "Unable to retrieve account ID"
 msgstr ""
 
-#: src/Services/Cloudflare_Client.php:282
+#: src/Services/Cloudflare_Client.php:318
 msgid "Unable to find a valid account ID."
 msgstr ""
 
-#: src/Services/Cloudflare_Client.php:323
-#: src/Services/Cloudflare_Client.php:348
+#: src/Services/Cloudflare_Client.php:359
+#: src/Services/Cloudflare_Client.php:384
 msgid "Unable to retrieve zone id due to invalid response data"
 msgstr ""
 
-#: src/Services/Cloudflare_Client.php:360
+#: src/Services/Cloudflare_Client.php:396
 msgid "Unable to find domains configured on Cloudflare"
 msgstr ""
 
-#: src/Services/Cloudflare_Client.php:618
+#: src/Services/Cloudflare_Client.php:654
 msgid "Could not check token permissions. Invalid response from Cloudflare."
 msgstr ""
 
@@ -1201,7 +1201,7 @@ msgid "Disk Page Caching is functional."
 msgstr ""
 
 #. translators: %s is the path to the .htaccess file
-#: src/Utils/Htaccess_Writer.php:104
+#: src/Utils/Htaccess_Writer.php:119
 #, php-format
 msgid "The .htaccess file (%s) could not be edited. Check if the file has write permissions."
 msgstr ""
