@@ -212,6 +212,11 @@ class Bypass_Resolver {
 			return true;
 		}
 
+		if ( self::has_comment_author_cookie() ) {
+			Helpers::bypass_reason_header( 'Comment Author' );
+			return true;
+		}
+
 		$cache_buster = SWCFPC_CACHE_BUSTER;
 		if ( isset( $_GET[ $cache_buster ] ) ) {
 			Helpers::bypass_reason_header( sprintf( 'Cache Buster (%s)', $cache_buster ) );
@@ -228,6 +233,25 @@ class Bypass_Resolver {
 
 			if ( $http_status !== false && $http_status >= 400 && $http_status < 600 ) {
 				Helpers::bypass_reason_header( sprintf( 'HTTP Status %d', $http_status ) );
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Whether the visitor has a WordPress comment author cookie.
+	 *
+	 * WordPress personalises pages for that visitor (pre-filled comment fields, their comments
+	 * awaiting moderation), so the response must never be stored in a shared cache. This check
+	 * does not depend on the excluded cookies setting, which an admin can change.
+	 *
+	 * @return bool
+	 */
+	private static function has_comment_author_cookie(): bool {
+		foreach ( array_keys( $_COOKIE ) as $cookie_name ) {
+			if ( strpos( (string) $cookie_name, 'comment_author_' ) === 0 ) {
 				return true;
 			}
 		}

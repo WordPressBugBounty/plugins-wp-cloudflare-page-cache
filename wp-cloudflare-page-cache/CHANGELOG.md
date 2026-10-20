@@ -1,3 +1,25 @@
+#####   Version 5.3.8 (2026-10-20)
+
+- Fixed pages crashing during upgrade with an old fallback cache file.
+- Fixed excessive password generation slowing every uncached page load
+- Fixed preloader queueing invalid phone and email links as pages
+- Fixed the public optimization endpoint to verify signatures securely.
+- Fixed Purge Cache on trashed posts clearing the old public URL
+- Fixed manual cache purge showing generic error instead of actual failure reason.
+- Fixed leftover cached pages remaining after turning HTML-only purging off
+- Fixed the preloader queueing invalid taxonomy and excluded URLs.
+- Fixed late-loading Google Fonts falling back to default fonts
+- Fixed admin stylesheet restyling other plugins' admin pages
+- Fixed commenter details leaking into cached pages for other visitors
+- Fixed unrelated events purging related pages or the whole cache
+- Fixed Remove Unused CSS staying inactive when another plugin rewrote the optimizer script.
+- Fixed queued cache purges exhausting PHP memory on large queues
+- Fixed SEOPress sitemaps being cached instead of bypassed automatically
+- Fixed batched Cloudflare purges reporting success when batches failed
+- Fixed Transform Rule leaving a leading ampersand in cleaned URLs.
+- Fixed the Transform Rule leaving excluded parameters after retained parameters.
+- Updated dependencies
+
 #####   Version 5.3.7 (2026-10-05)
 
 - Fixed static file errors being cached for too long.

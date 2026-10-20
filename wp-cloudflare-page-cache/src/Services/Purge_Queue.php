@@ -98,7 +98,7 @@ class Purge_Queue {
 			];
 		}
 
-		Logger::log( 'purge_queue::write', 'URLs in purge queue ' . print_r( $swcfpc_cache_queue, true ), true );
+		Logger::log( 'purge_queue::write', sprintf( 'Purge queue: purge all %s, %s', $swcfpc_cache_queue['purge_all'] ? 'yes' : 'no', Logger::describe_urls( $swcfpc_cache_queue['urls'] ) ), true );
 
 		file_put_contents( $cache_queue_path, wp_json_encode( $swcfpc_cache_queue ) );
 

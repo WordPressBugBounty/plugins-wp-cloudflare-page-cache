@@ -81,6 +81,35 @@ class Logger {
 	}
 
 	/**
+	 * Describe a URL list for a log line: the count and the first few URLs.
+	 *
+	 * Callers build the message before the verbosity check runs, so dumping a list that can
+	 * hold thousands of URLs costs memory even when nothing is written.
+	 *
+	 * @param array<int|string, string> $urls  URLs.
+	 * @param int                       $limit How many URLs to list.
+	 *
+	 * @return string
+	 */
+	public static function describe_urls( array $urls, int $limit = 10 ): string {
+		$count       = count( $urls );
+		$description = sprintf( '%d URLs', $count );
+
+		if ( $count === 0 ) {
+			return $description;
+		}
+
+		// Slice before anything else: copying a large list here costs as much memory as the dump this replaces.
+		$description .= ': ' . implode( ', ', array_slice( $urls, 0, $limit ) );
+
+		if ( $count > $limit ) {
+			$description .= sprintf( ' (and %d more)', $count - $limit );
+		}
+
+		return $description;
+	}
+
+	/**
 	 * Truncate the log file.
 	 */
 	public static function reset(): void {

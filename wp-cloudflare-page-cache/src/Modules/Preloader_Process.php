@@ -13,6 +13,12 @@ class Preloader_Process implements Module_Interface {
 	private const LOCK_OPTION          = 'swcfpc_preloader_lock';
 	private const LOCK_TIMEOUT_MINUTES = 15;
 
+	/**
+	 * Non-web schemes that end up inside same-site paths, e.g. `https://example.com/tel:123` when a
+	 * theme or menu prefixes the home URL to a `tel:` link. URLs containing them are never preloaded.
+	 */
+	private const NON_WEB_SCHEMES = [ 'mailto', 'tel', 'sms', 'fax', 'callto', 'skype', 'whatsapp', 'viber', 'javascript', 'vbscript', 'data', 'blob', 'file' ];
+
 	public function init(): void {
 		add_action( 'spc_preloader_job', array( $this, 'preloader_jobs' ) );
 		add_action( 'spc_preloader_completed', array( $this, 'preloader_completed' ) );
@@ -104,18 +110,87 @@ class Preloader_Process implements Module_Interface {
 	public static function start_for_urls( array $urls ): void {
 		$max_urls = defined( 'SWCFPC_PRELOADER_MAX_POST_NUMBER' ) ? SWCFPC_PRELOADER_MAX_POST_NUMBER : 50;
 
+		$excluded_patterns = self::get_excluded_url_patterns();
+
 		$urls = array_unique( array_filter( $urls ) );
 		$urls = array_values(
 			array_filter(
 				$urls,
-				static function ( $url ) {
-					return ! Helpers::is_external_link( $url );
+				static function ( $url ) use ( $excluded_patterns ): bool {
+					return self::is_preloadable_url( $url ) && ! self::matches_url_pattern( $url, $excluded_patterns );
 				}
 			)
 		);
 		$urls = array_slice( $urls, 0, $max_urls );
 
 		self::enqueue_urls( $urls );
+	}
+
+	/**
+	 * Check whether a URL can be preloaded: an http(s) URL of this site whose path does not
+	 * contain a non-web scheme such as `/tel:` or `/mailto:`.
+	 *
+	 * @param mixed $url Candidate URL.
+	 *
+	 * @return bool
+	 */
+	private static function is_preloadable_url( $url ): bool {
+		if ( ! is_string( $url ) || Helpers::is_external_link( $url ) ) {
+			return false;
+		}
+
+		$scheme = wp_parse_url( $url, PHP_URL_SCHEME );
+
+		if ( ! is_string( $scheme ) || ! in_array( strtolower( $scheme ), [ 'http', 'https' ], true ) ) {
+			return false;
+		}
+
+		$path = rawurldecode( (string) wp_parse_url( $url, PHP_URL_PATH ) );
+
+		return preg_match( '#/(?:' . implode( '|', self::NON_WEB_SCHEMES ) . '):#i', $path ) !== 1;
+	}
+
+	/**
+	 * Get the URL patterns the preloader skips: the cache's excluded URLs, which are never cached so
+	 * preloading them is wasted, plus the patterns added through `spc_preloader_excluded_urls`.
+	 *
+	 * @return array<int, string>
+	 */
+	private static function get_excluded_url_patterns(): array {
+		$excluded_urls = Settings_Store::get_instance()->get( Constants::SETTING_EXCLUDED_URLS, [] );
+
+		/**
+		 * Filters the URL patterns the preloader skips.
+		 *
+		 * A pattern matches the path and query string of a URL, and `*` matches any text, as in the
+		 * excluded URLs setting. For example `/author/*` or `/shop/page/*`.
+		 *
+		 * @param array<int, string> $patterns URL patterns. Defaults to the cache's excluded URLs.
+		 */
+		$patterns = apply_filters( 'spc_preloader_excluded_urls', is_array( $excluded_urls ) ? $excluded_urls : [] );
+
+		return is_array( $patterns ) ? array_values( array_filter( $patterns, 'is_string' ) ) : [];
+	}
+
+	/**
+	 * Check whether the path and query string of a URL match one of the patterns.
+	 *
+	 * @param string             $url      URL.
+	 * @param array<int, string> $patterns URL patterns with `*` wildcards.
+	 *
+	 * @return bool
+	 */
+	private static function matches_url_pattern( string $url, array $patterns ): bool {
+		$query  = wp_parse_url( $url, PHP_URL_QUERY );
+		$target = (string) wp_parse_url( $url, PHP_URL_PATH ) . ( is_string( $query ) && $query !== '' ? '?' . $query : '' );
+
+		foreach ( $patterns as $pattern ) {
+			if ( $pattern !== '' && Helpers::wildcard_match( $pattern, $target ) ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**

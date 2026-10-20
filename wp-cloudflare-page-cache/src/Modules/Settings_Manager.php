@@ -518,6 +518,13 @@ class Settings_Manager implements Module_Interface {
 	private const ALLOWED_FIELD_TYPES = [ 'type', 'bust_cache', 'default', 'sync_rules', 'encrypted' ];
 
 	/**
+	 * Default URL secret keys generated in this request, by blog ID and setting key.
+	 *
+	 * @var array<int, array<string, string>>
+	 */
+	private static $default_url_secrets = [];
+
+	/**
 	 * Initialize the settings manager.
 	 *
 	 * @return void
@@ -748,8 +755,8 @@ class Settings_Manager implements Module_Interface {
 		// Dynamic default values that can't be set in the BASE_FIELDS array.
 		$fields[ Constants::SETTING_NATIVE_LAZY_LOADING ]['default']     = apply_filters( 'wp_lazy_loading_enabled', true, 'img', 'spc_default_native_lazyloading' );
 		$fields[ Constants::SETTING_POSTS_PER_PAGE ]['default']          = get_option( 'posts_per_page', 0 );
-		$fields[ Constants::SETTING_PRELOAD_CRONJOB_SECRET ]['default']  = wp_generate_password( 20, false );
-		$fields[ Constants::SETTING_PURGE_URL_SECRET_KEY ]['default']    = wp_generate_password( 20, false );
+		$fields[ Constants::SETTING_PRELOAD_CRONJOB_SECRET ]['default']  = $this->get_default_url_secret( Constants::SETTING_PRELOAD_CRONJOB_SECRET );
+		$fields[ Constants::SETTING_PURGE_URL_SECRET_KEY ]['default']    = $this->get_default_url_secret( Constants::SETTING_PURGE_URL_SECRET_KEY );
 		$fields[ Constants::SETTING_PREFETCH_URLS_TIMESTAMP ]['default'] = time();
 		$fields[ Constants::SETTING_CF_DOMAIN_NAME ]['default']          = Helpers::get_second_level_domain();
 
@@ -764,6 +771,27 @@ class Settings_Manager implements Module_Interface {
 		}
 
 		return $fields;
+	}
+
+	/**
+	 * Get the default for a URL secret key setting.
+	 *
+	 * Generated once per request and site, so building the field list does not
+	 * generate random passwords on every call. Nothing is stored here: saving the
+	 * settings stores the value, and a reset makes the next request generate a new one.
+	 *
+	 * @param string $key Setting key.
+	 *
+	 * @return string
+	 */
+	private function get_default_url_secret( string $key ): string {
+		$blog_id = get_current_blog_id();
+
+		if ( ! isset( self::$default_url_secrets[ $blog_id ][ $key ] ) ) {
+			self::$default_url_secrets[ $blog_id ][ $key ] = wp_generate_password( 20, false );
+		}
+
+		return self::$default_url_secrets[ $blog_id ][ $key ];
 	}
 
 	/**
@@ -820,6 +848,9 @@ class Settings_Manager implements Module_Interface {
 			$fallback_cache_handler->fallback_cache_advanced_cache_enable();
 			$fallback_cache_handler->fallback_cache_save_config();
 		}
+		// The page list is only kept while "Purge HTML pages only" is on: remove what an earlier run left.
+		$sw_cloudflare_pagecache->get_core_loader()->html_cache()->delete_unused_cached_urls();
+
 		$database_optimization = new Database_Optimization();
 		if ( $settings->get( Constants::SETTING_ENABLE_DATABASE_OPTIMIZATION ) ) {
 			$database_optimization->setup_cron();

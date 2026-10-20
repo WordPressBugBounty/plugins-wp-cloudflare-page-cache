@@ -470,7 +470,7 @@ class Rest_Server implements Module_Interface {
 		if ( $time < time() - DAY_IN_SECONDS ) {
 			return $this->message_response( 'Invalid Signature.', 400 );
 		}
-		if ( wp_hash( $url . $time . $page_url, 'nonce' ) !== $hmac ) {
+		if ( ! is_string( $hmac ) || ! hash_equals( wp_hash( $url . $time . $page_url, 'nonce' ), $hmac ) ) {
 			return $this->message_response( 'Invalid Signature.', 400 );
 		}
 		$bg_selectors = $request->get_param( 'b' );
@@ -731,13 +731,19 @@ class Rest_Server implements Module_Interface {
 	public function purge_cache( WP_REST_Request $request ) {
 		Logger::log( 'cache_controller::ajax_purge_whole_cache', 'Purge whole cache' );
 
-		$status = Cache_Controller::purge_all( false, false );
+		$error  = '';
+		$status = Cache_Controller::purge_all( false, false, false, $error );
 
 		if ( ! $status ) {
-			return $this->message_response(
-				__( 'Failed to purge cache. Please try again later.', 'wp-cloudflare-page-cache' ),
-				500
-			);
+			$message = __( 'Failed to purge cache. Please try again later.', 'wp-cloudflare-page-cache' );
+
+			if ( ! empty( $error ) ) {
+				// The dashboard renders this message as HTML, and the reason comes from the Cloudflare API or the HTTP transport.
+				// translators: %s is the reason the purge failed, e.g. a connection error or an error returned by Cloudflare.
+				$message = sprintf( __( 'Failed to purge cache: %s', 'wp-cloudflare-page-cache' ), esc_html( $error ) );
+			}
+
+			return $this->message_response( $message, 500 );
 		}
 
 		return $this->message_response( __( 'Cache purge started. This may take a moment to complete.', 'wp-cloudflare-page-cache' ) );

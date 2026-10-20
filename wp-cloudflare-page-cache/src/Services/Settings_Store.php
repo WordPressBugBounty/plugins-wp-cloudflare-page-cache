@@ -124,8 +124,6 @@ class Settings_Store {
 	 * @return array{value:mixed,source:string}
 	 */
 	public function get_with_source( string $key, $fallback_default = false ): array {
-		$default_value = $this->settings_manager->get_default_for_field( $key, $fallback_default );
-
 		if ( $this->is_overridden( $key ) ) {
 			return [
 				'value'  => $this->get_override_value( $key ),
@@ -140,8 +138,9 @@ class Settings_Store {
 			];
 		}
 
+		// Resolved last: building the default rebuilds the whole field list.
 		return [
-			'value'  => $default_value,
+			'value'  => $this->settings_manager->get_default_for_field( $key, $fallback_default ),
 			'source' => self::CONFIG_SOURCE_DEFAULT,
 		];
 	}
@@ -490,8 +489,11 @@ class Settings_Store {
 		$this->unreadable_encrypted_fields = [];
 		$this->encryption_state_valid      = true;
 
+		// Looked up once: is_encrypted_field() rebuilds the whole field list on every call.
+		$encrypted_fields = $this->settings_manager->get_fields( [ 'encrypted' => true ] );
+
 		foreach ( $this->stored_config as $key => $value ) {
-			if ( ! $this->settings_manager->is_encrypted_field( $key ) ) {
+			if ( ! isset( $encrypted_fields[ $key ] ) ) {
 				$this->config[ $key ] = $value;
 				continue;
 			}

@@ -322,7 +322,12 @@ class Helpers {
 	}
 
 	/**
-	 * Whether a request URI points at an XML sitemap (`/sitemap_index.xml`, `/post-sitemap.xml`, ...).
+	 * Whether a request URI points at an XML sitemap or a sitemap stylesheet of an SEO plugin.
+	 *
+	 * Matches the index files `/sitemap.xml` (All in One SEO, Jetpack), `/sitemap_index.xml`
+	 * (Yoast, Rank Math) and `/sitemaps.xml` (SEOPress), sub-sitemaps such as `/post-sitemap.xml`
+	 * or `/post-sitemap2.xml`, and the SEOPress stylesheets `/sitemaps_xsl.xsl` and
+	 * `/sitemaps_video_xsl.xsl`. The file may sit in a subdirectory install.
 	 *
 	 * @param string $request_uri Request URI.
 	 *
@@ -331,7 +336,7 @@ class Helpers {
 	public static function is_sitemap_request_uri( string $request_uri ): bool {
 		$path = (string) parse_url( $request_uri, PHP_URL_PATH );
 
-		return strcasecmp( $path, '/sitemap_index.xml' ) === 0 || (bool) preg_match( '/[a-zA-Z0-9]-sitemap\.xml$/', $path );
+		return (bool) preg_match( '#/(?:sitemap|sitemap_index|sitemaps)\.xml$|[a-z0-9]-sitemap[0-9]*\.xml$|/sitemaps(?:_video)?_xsl\.xsl$#i', $path );
 	}
 
 	/**

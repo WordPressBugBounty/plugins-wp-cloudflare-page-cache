@@ -446,6 +446,8 @@ class Cloudflare_Client extends Cloudflare_Rule {
 			'curl_multi_exec',
 			'curl_multi_select',
 			'curl_multi_getcontent',
+			'curl_getinfo',
+			'curl_error',
 			'curl_multi_remove_handle',
 			'curl_multi_close',
 		);
@@ -482,7 +484,7 @@ class Cloudflare_Client extends Cloudflare_Rule {
 
 			$response = wp_remote_post( $url, $args );
 
-			if ( ! $this->is_success_api_response( $response, 'purge_cache_url_chunks', $error ) ) {
+			if ( ! $this->is_successful_chunk( $response, 'purge_cache_url_chunks', $error ) ) {
 				$success = false;
 			}
 		}
@@ -491,10 +493,36 @@ class Cloudflare_Client extends Cloudflare_Rule {
 	}
 
 	/**
+	 * Check the response of one purge chunk.
+	 *
+	 * A later successful chunk must not clear the error of a failed one, so `$error` changes only
+	 * when this chunk failed.
+	 *
+	 * @param array{body: string, response: array{code: int, message: string}}|\WP_Error $response The chunk response.
+	 * @param string                                                             $origin   The calling method, for the log.
+	 * @param string                                                             $error    Set to the chunk error when the chunk failed.
+	 *
+	 * @return bool Whether Cloudflare accepted the chunk.
+	 */
+	private function is_successful_chunk( $response, string $origin, &$error ): bool {
+		$chunk_error = '';
+
+		if ( $this->is_success_api_response( $response, $origin, $chunk_error ) ) {
+			return true;
+		}
+
+		$error = $chunk_error;
+
+		return false;
+	}
+
+	/**
 	 * Purge URLs from Cloudflare cache asynchronously.
 	 *
-	 * @param array $urls URLs to purge.
-	 * @param string $error The error message.
+	 * Sends one request per chunk of 30 URLs and succeeds only when Cloudflare accepted every chunk.
+	 *
+	 * @param array  $urls  URLs to purge.
+	 * @param string $error The error message of the last failed chunk.
 	 *
 	 * @return bool
 	 */
@@ -507,6 +535,27 @@ class Cloudflare_Client extends Cloudflare_Rule {
 			return $this->purge_cache_url_chunks( $chunks, $error );
 		}
 
+		$success = true;
+
+		foreach ( $this->send_parallel_purge_requests( $chunks ) as $index => $response ) {
+			$this->log( 'purge_cache_urls_async', "Response for request {$index}: " . ( is_wp_error( $response ) ? $response->get_error_message() : $response['body'] ) );
+
+			if ( ! $this->is_successful_chunk( $response, 'purge_cache_urls_async', $error ) ) {
+				$success = false;
+			}
+		}
+
+		return $success;
+	}
+
+	/**
+	 * Send one purge request per chunk in parallel through the cURL multi API.
+	 *
+	 * @param array<int, array<int, string>> $chunks Chunks of URLs to purge.
+	 *
+	 * @return array<int, array{body: string, response: array{code: int, message: string}}|\WP_Error> One response per chunk.
+	 */
+	protected function send_parallel_purge_requests( array $chunks ): array {
 		$args = $this->get_api_auth_args( true );
 
 		$multi_curl = curl_multi_init();
@@ -547,10 +596,15 @@ class Cloudflare_Client extends Cloudflare_Rule {
 			}
 		} while ( $active && $status == CURLM_OK );
 
+		$responses = [];
+
 		// close the handles
 		for ( $i = 0; $i < $curl_index; $i++ ) {
-			// Get the content of cURL request $curl_array[$i]
-			$this->log( 'purge_cache_urls_async', "Response for request {$i}: " . curl_multi_getcontent( $curl_array[ $i ] ) );
+			$responses[ $i ] = $this->to_http_response(
+				(string) curl_multi_getcontent( $curl_array[ $i ] ),
+				(int) curl_getinfo( $curl_array[ $i ], CURLINFO_HTTP_CODE ),
+				curl_error( $curl_array[ $i ] )
+			);
 
 			curl_multi_remove_handle( $multi_curl, $curl_array[ $i ] );
 		}
@@ -562,9 +616,32 @@ class Cloudflare_Client extends Cloudflare_Rule {
 			curl_close( $curl_array[ $i ] );
 		}
 
-		return true;
+		return $responses;
 	}
 
+	/**
+	 * Shape a cURL result like a WordPress HTTP API response, so it can go through
+	 * `is_success_api_response()`. A request that got no HTTP response becomes a `WP_Error`.
+	 *
+	 * @param string $body       Response body.
+	 * @param int    $http_code  HTTP status code, 0 when no response arrived.
+	 * @param string $curl_error cURL error message, if any.
+	 *
+	 * @return array{body: string, response: array{code: int, message: string}}|\WP_Error
+	 */
+	protected function to_http_response( string $body, int $http_code, string $curl_error ) {
+		if ( $http_code === 0 ) {
+			return new \WP_Error( 'http_request_failed', $curl_error !== '' ? $curl_error : 'No response from the Cloudflare API.' );
+		}
+
+		return [
+			'body'     => $body,
+			'response' => [
+				'code'    => $http_code,
+				'message' => '',
+			],
+		];
+	}
 	/**
 	 * Purge cache URLs.
 	 *

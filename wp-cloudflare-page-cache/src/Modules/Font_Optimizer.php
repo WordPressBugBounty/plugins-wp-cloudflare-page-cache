@@ -31,6 +31,14 @@ class Font_Optimizer implements Module_Interface {
 	private $fonts = [];
 
 	/**
+	 * Whether the optimized fonts were already printed in the head. A Google Font captured after
+	 * that (enqueued late and printed in the footer) can no longer join the combined request.
+	 *
+	 * @var bool
+	 */
+	private $head_output_done = false;
+
+	/**
 	 * Settings store instance
 	 *
 	 * @var Settings_Store
@@ -71,7 +79,6 @@ class Font_Optimizer implements Module_Interface {
 	 */
 	private function init_optimization() {
 		add_filter( 'style_loader_src', [ $this, 'capture_google_fonts' ], 10, 2 );
-		add_action( 'wp_enqueue_scripts', [ $this, 'dequeue_google_fonts' ], 100 );
 		add_action( 'wp_head', [ $this, 'add_preconnect_hints' ], PHP_INT_MAX );
 		add_action( 'wp_head', [ $this, 'output_optimized_fonts' ], 15 );
 	}
@@ -111,31 +118,14 @@ class Font_Optimizer implements Module_Interface {
 			return $src;
 		}
 
+		// The combined link is already printed: load a late font on its own instead of dropping it.
+		if ( $this->head_output_done ) {
+			return $this->load_locally ? $this->load_google_fonts_locally( $src, $handle ) : $src;
+		}
+
 		$this->fonts[] = new Google_Font( $src );
 
 		return false;
-	}
-
-	/**
-	 * Dequeue Google Fonts to prevent duplicate loading
-	 *
-	 * @return void
-	 */
-	public function dequeue_google_fonts() {
-		global $wp_styles;
-
-		if ( ! is_object( $wp_styles ) ) {
-			return;
-		}
-
-		foreach ( $wp_styles->registered as $handle => $style ) {
-			if ( ! Google_Font::is_google_font_url( $style->src ) ) {
-				return;
-			}
-
-			wp_dequeue_style( $handle );
-			$this->fonts[] = new Google_Font( $style->src );
-		}
 	}
 
 	/**
@@ -162,6 +152,8 @@ class Font_Optimizer implements Module_Interface {
 	 * @return void
 	 */
 	public function output_optimized_fonts() {
+		$this->head_output_done = true;
+
 		if ( ! $this->optimize ) {
 			return;
 		}

@@ -20,6 +20,21 @@ defined( 'ABSPATH' ) || die( 'Cheatin&#8217; uh?' );
  * dependency on this class.
  */
 class Cache_Invalidation_Hooks implements Module_Interface {
+	/**
+	 * Posts purged in this request, by {@see self::purged_post_key()}. One change fires several post
+	 * hooks; the post is purged once.
+	 *
+	 * @var array<string, true>
+	 */
+	private static $purged_posts = [];
+
+	/**
+	 * Post whose comment count WordPress is updating, by {@see self::purged_post_key()}. The update
+	 * fires `clean_post_cache` and `edit_post` for it, which are not post edits.
+	 *
+	 * @var string
+	 */
+	private static $comment_count_post = '';
 
 	public function init() {
 		// Programmatic purge entry point used by 3rd-party code.
@@ -29,6 +44,8 @@ class Cache_Invalidation_Hooks implements Module_Interface {
 		add_action( 'transition_comment_status', [ $this, 'purge_cache_when_comment_is_approved' ], PHP_INT_MAX, 3 );
 		add_action( 'comment_post', [ $this, 'purge_cache_when_new_comment_is_added' ], PHP_INT_MAX, 3 );
 		add_action( 'delete_comment', [ $this, 'purge_cache_when_comment_is_deleted' ], PHP_INT_MAX );
+		add_filter( 'pre_wp_update_comment_count_now', [ $this, 'note_comment_count_update' ], PHP_INT_MAX, 3 );
+		add_action( 'wp_update_comment_count', [ $this, 'purge_cache_on_comment_count_update' ], PHP_INT_MAX, 1 );
 
 		// Theme / menu / customizer / permalinks / page-builder generated CSS.
 		$theme_actions = [
@@ -170,6 +187,16 @@ class Cache_Invalidation_Hooks implements Module_Interface {
 			return;
 		}
 
+		// Going live first fires clean_post_cache, which already purged the post. Hiding a post always purges.
+		if ( $going_live && isset( self::$purged_posts[ self::purged_post_key( $post->ID ) ] ) ) {
+			// A whole-cache purge from clean_post_cache sends no tag purge; going live always did.
+			if ( $auto_purge_whole ) {
+				self::dispatch_post_tag_purge( $post->ID );
+			}
+
+			return;
+		}
+
 		$current_action = function_exists( 'current_action' ) ? current_action() : '';
 
 		if ( $auto_purge_whole ) {
@@ -189,10 +216,25 @@ class Cache_Invalidation_Hooks implements Module_Interface {
 	 * @return void
 	 */
 	public function purge_cache_on_post_edit( $post_id ) {
-		static $done = [];
-		$post_id     = (int) $post_id;
+		$post_id        = (int) $post_id;
+		$current_action = function_exists( 'current_action' ) ? current_action() : '';
 
-		if ( isset( $done[ $post_id ] ) ) {
+		// A comment count update: purge_cache_on_comment_count_update() purges the post page. Checked
+		// first, so the marker is cleared at the update's last hook also for a post purged already.
+		if ( self::$comment_count_post === self::purged_post_key( $post_id ) && in_array( $current_action, [ 'clean_post_cache', 'edit_post' ], true ) ) {
+			if ( 'edit_post' === $current_action ) {
+				self::$comment_count_post = '';
+			}
+
+			return;
+		}
+
+		if ( isset( self::$purged_posts[ self::purged_post_key( $post_id ) ] ) ) {
+			return;
+		}
+
+		// The pings cron (pingbacks, trackbacks, enclosures) records what was pinged, not content.
+		if ( doing_action( 'do_pings' ) ) {
 			return;
 		}
 
@@ -208,8 +250,6 @@ class Cache_Invalidation_Hooks implements Module_Interface {
 			return;
 		}
 
-		$current_action = function_exists( 'current_action' ) ? current_action() : '';
-
 		$valid_post_status = [ 'publish', 'trash', 'private' ];
 		$this_post_status  = get_post_status( $post_id );
 
@@ -220,6 +260,13 @@ class Cache_Invalidation_Hooks implements Module_Interface {
 		if ( is_int( wp_is_post_autosave( $post_id ) ) || is_int( wp_is_post_revision( $post_id ) ) ) {
 			return;
 		}
+
+		// WordPress refreshes an expired oEmbed cache while a page is viewed: not a content change.
+		if ( 'oembed_cache' === get_post_type( $post_id ) ) {
+			return;
+		}
+
+		self::$purged_posts[ self::purged_post_key( $post_id ) ] = true;
 
 		if ( $auto_purge_whole ) {
 			Cache_Controller::purge_all();
@@ -233,8 +280,58 @@ class Cache_Invalidation_Hooks implements Module_Interface {
 		Cache_Controller::purge_urls( self::get_post_related_links( $post_id ) );
 		self::dispatch_post_tag_purge( $post_id );
 		Logger::log( 'cache_invalidation_hooks::purge_cache_on_post_edit', "Purge Cloudflare cache for only post id {$post_id} and related contents - Fired action: {$current_action}" );
+	}
 
-		$done[ $post_id ] = true;
+	/**
+	 * Note the post whose comment count is about to be updated, see {@see self::$comment_count_post}.
+	 *
+	 * @param mixed $new_count The new count, or null to let WordPress count. Returned unchanged.
+	 * @param mixed $old_count
+	 * @param mixed $post_id
+	 * @return mixed
+	 */
+	public function note_comment_count_update( $new_count, $old_count, $post_id ) {
+		self::$comment_count_post = self::purged_post_key( (int) $post_id );
+
+		return $new_count;
+	}
+
+	/**
+	 * WordPress updates a post's comment count whenever one of its comments is added, edited,
+	 * approved, unapproved, spammed, trashed or deleted, by any means (comment form, REST API,
+	 * import), also when counting was deferred. Purge the post page, as "Purge on comment" asks,
+	 * instead of the related pages or the whole cache.
+	 *
+	 * @param mixed $post_id
+	 * @return void
+	 */
+	public function purge_cache_on_comment_count_update( $post_id ) {
+		$post_id = (int) $post_id;
+
+		if ( Settings_Store::get_instance()->get( Constants::SETTING_PURGE_ON_COMMENT, 0 ) == 0 || ! Settings_Store::get_instance()->is_cache_enabled() ) {
+			return;
+		}
+
+		$permalink = get_permalink( $post_id );
+
+		if ( ! $permalink ) {
+			return;
+		}
+
+		Cache_Controller::purge_urls( [ $permalink ] );
+		self::dispatch_post_tag_purge( $post_id, [ 'scope' => 'comment' ] );
+
+		Logger::log( 'cache_invalidation_hooks::purge_cache_on_comment_count_update', "Purge Cloudflare cache for only post {$post_id} - comments changed" );
+	}
+
+	/**
+	 * Key of a post in {@see self::$purged_posts}: post IDs repeat across the sites of a network.
+	 *
+	 * @param int $post_id The post ID.
+	 * @return string
+	 */
+	private static function purged_post_key( int $post_id ): string {
+		return get_current_blog_id() . ':' . $post_id;
 	}
 
 	/**
@@ -345,7 +442,8 @@ class Cache_Invalidation_Hooks implements Module_Interface {
 		$urls         = [];
 
 		for ( $i = 2; $i <= $max_pages; $i++ ) {
-			if ( ! $wp_rewrite->using_permalinks() ) {
+			// A query-string archive URL (plain permalinks, or a taxonomy without rewrites) pages with `paged`.
+			if ( ! $wp_rewrite->using_permalinks() || false !== strpos( $base_url, '?' ) ) {
 				$urls[] = add_query_arg( 'paged', $i, $base_url );
 				continue;
 			}
@@ -368,12 +466,13 @@ class Cache_Invalidation_Hooks implements Module_Interface {
 
 		$listofurls[] = get_permalink( $post_id );
 
-		foreach ( get_object_taxonomies( $post_type ) as $taxonomy ) {
-			if ( is_object( $taxonomy ) && ( $taxonomy->public == false || $taxonomy->rewrite == false ) ) {
+		foreach ( get_object_taxonomies( $post_type, 'objects' ) as $taxonomy ) {
+			// Only a taxonomy with public archives has term pages to purge.
+			if ( ! is_taxonomy_viewable( $taxonomy ) ) {
 				continue;
 			}
 
-			$terms = get_the_terms( $post_id, $taxonomy );
+			$terms = get_the_terms( $post_id, $taxonomy->name );
 
 			if ( empty( $terms ) || is_wp_error( $terms ) ) {
 				continue;
@@ -399,11 +498,9 @@ class Cache_Invalidation_Hooks implements Module_Interface {
 			$listofurls[] = get_post_type_archive_feed_link( $post_type );
 		}
 
-		if ( get_post_status( $post_id ) == 'trash' ) {
-			$trash_post   = get_permalink( $post_id );
-			$trash_post   = str_replace( '__trashed', '', $trash_post );
-			$listofurls[] = $trash_post;
-			$listofurls[] = "{$trash_post}feed/";
+		$post = get_post( $post_id );
+		if ( $post instanceof \WP_Post && $post->post_status === 'trash' ) {
+			$listofurls = array_merge( $listofurls, self::get_trashed_post_published_links( $post ) );
 		}
 
 		$published_posts_count = (int) wp_count_posts( 'post' )->publish;
@@ -428,5 +525,54 @@ class Cache_Invalidation_Hooks implements Module_Interface {
 		}
 
 		return $listofurls;
+	}
+
+	/**
+	 * Get the URLs a trashed post had while it was published: its permalink and its comments feed.
+	 *
+	 * Core gives a trashed post a plain `?p=<id>` permalink and a `__trashed` slug, so both URLs
+	 * are built from a published copy of the post that has the slug it had before it was trashed.
+	 * A post that was neither published nor an attachment (`inherit`) before it was trashed, e.g. a draft,
+	 * had no public URL, so it gets none.
+	 *
+	 * @param \WP_Post $post Trashed post.
+	 *
+	 * @return list<string>
+	 */
+	private static function get_trashed_post_published_links( \WP_Post $post ): array {
+		global $wp_rewrite;
+
+		// Core stores the status a post had before it was trashed; it is missing only when the post was trashed some other way.
+		$status_before_trash = get_post_meta( $post->ID, '_wp_trash_meta_status', true );
+
+		if ( is_string( $status_before_trash ) && ! in_array( $status_before_trash, [ '', 'publish', 'inherit' ], true ) ) {
+			return [];
+		}
+
+		$desired_slug = get_post_meta( $post->ID, '_wp_desired_post_slug', true );
+		$slug         = is_string( $desired_slug ) && $desired_slug !== ''
+			? $desired_slug
+			: (string) preg_replace( '/__trashed(?:-\d+)?$/', '', $post->post_name );
+
+		// Without a slug, the permalink would point to an archive (e.g. `/feed/` or `/2026/10/`).
+		if ( $slug === '' ) {
+			return [];
+		}
+
+		$published_post              = clone $post;
+		$published_post->post_status = 'publish';
+		$published_post->post_name   = $slug;
+
+		$permalink = get_permalink( $published_post );
+
+		if ( ! is_string( $permalink ) || $permalink === '' ) {
+			return [];
+		}
+
+		if ( ! $wp_rewrite->using_permalinks() ) {
+			return [ $permalink, get_post_comments_feed_link( $post->ID ) ];
+		}
+
+		return [ $permalink, trailingslashit( $permalink ) . user_trailingslashit( 'feed', 'single_feed' ) ];
 	}
 }

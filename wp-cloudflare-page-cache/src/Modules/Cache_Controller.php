@@ -412,18 +412,28 @@ class Cache_Controller implements Module_Interface {
 	 * through the singleton instance. Prefer calling this from outside Cache_Controller
 	 * instead of chaining through `Loader::get()->cache_controller()`.
 	 *
+	 * @param bool   $disable_preloader      Do not start the preloader after the purge.
+	 * @param bool   $queue_mode             Queue the purge instead of running it now, unless the queue is disabled.
+	 * @param bool   $force_purge_everything Purge everything, even when only HTML pages are set to be purged.
+	 * @param string $error                  Set to the reason the purge failed, when it returns false.
+	 *
 	 * @return bool
 	 */
-	public static function purge_all( bool $disable_preloader = false, bool $queue_mode = true, bool $force_purge_everything = false ) {
-		return Loader::get()->cache_controller()->purge_all_internal( $disable_preloader, $queue_mode, $force_purge_everything );
+	public static function purge_all( bool $disable_preloader = false, bool $queue_mode = true, bool $force_purge_everything = false, string &$error = '' ) {
+		return Loader::get()->cache_controller()->purge_all_internal( $disable_preloader, $queue_mode, $force_purge_everything, $error );
 	}
 
 	/**
 	 * @internal Use {@see self::purge_all()} from outside this class.
 	 *
+	 * @param bool   $disable_preloader      Do not start the preloader after the purge.
+	 * @param bool   $queue_mode             Queue the purge instead of running it now, unless the queue is disabled.
+	 * @param bool   $force_purge_everything Purge everything, even when only HTML pages are set to be purged.
+	 * @param string $error                  Set to the reason the purge failed, when it returns false.
+	 *
 	 * @return bool
 	 */
-	public function purge_all_internal( bool $disable_preloader = false, bool $queue_mode = true, bool $force_purge_everything = false ) {
+	public function purge_all_internal( bool $disable_preloader = false, bool $queue_mode = true, bool $force_purge_everything = false, string &$error = '' ) {
 		$error    = '';
 		$settings = Settings_Store::get_instance();
 
@@ -439,6 +449,8 @@ class Cache_Controller implements Module_Interface {
 
 		$cached_html_pages       = null;
 		$cached_html_pages_count = 0;
+		$cloudflare_purged       = true;
+		$cloudflare_error        = '';
 
 		if ( $force_purge_everything == false && $settings->get( Constants::SETTING_PURGE_ONLY_HTML, 0 ) > 0 ) {
 			$timestamp         = time();
@@ -448,11 +460,14 @@ class Cache_Controller implements Module_Interface {
 				$cached_html_pages_count = count( $cached_html_pages );
 
 				if ( $cached_html_pages_count > 0 ) {
-					Loader::get()->html_cache()->delete_cached_urls_by_timestamp( $timestamp );
+					$cloudflare = new Cloudflare_Integration();
 
-					if ( ! ( new Cloudflare_Integration() )->purge_cache_urls( $cached_html_pages, $error ) ) {
-						Logger::log( 'cache_controller::purge_all', "Unable to purge some URLs from Cloudflare due to error: {$error}" );
-						return false;
+					if ( ! $cloudflare->is_enabled() || $cloudflare->purge_cache_urls( $cached_html_pages, $cloudflare_error ) ) {
+						Loader::get()->html_cache()->delete_cached_urls_by_timestamp( $timestamp );
+					} else {
+						// Keep the page list so the next purge retries these URLs, and purge the other caches anyway.
+						Logger::log( 'cache_controller::purge_all', "Unable to purge some URLs from Cloudflare due to error: {$cloudflare_error}" );
+						$cloudflare_purged = false;
 					}
 				} else {
 					Logger::log( 'cache_controller::purge_all', 'There are no HTML pages to purge' );
@@ -507,13 +522,13 @@ class Cache_Controller implements Module_Interface {
 		} else {
 			if ( ! is_array( $cached_html_pages ) || ! $cached_html_pages_count ) {
 				Logger::log( 'cache_controller::purge_all', 'There are no HTML pages to purge' );
-			} else {
+			} elseif ( $cloudflare_purged ) {
 				if ( $settings->is_cloudflare_connected() ) {
 					Logger::log( 'cache_controller::purge_all', "Purged only {$cached_html_pages_count} HTML pages from Cloudflare" );
 				} else {
 					Logger::log( 'cache_controller::purge_all', "Purged only {$cached_html_pages_count} HTML pages" );
 				}
-				Logger::log( 'cache_controller::purge_all', 'Pages purged ' . print_r( $cached_html_pages, true ), true );
+				Logger::log( 'cache_controller::purge_all', 'Pages purged: ' . Logger::describe_urls( $cached_html_pages ), true );
 			}
 		}
 
@@ -525,6 +540,13 @@ class Cache_Controller implements Module_Interface {
 
 		if ( Speculative_Loading::is_legacy_engine() ) {
 			Speculative_Loading::bump_prefetch_timestamp();
+		}
+
+		if ( ! $cloudflare_purged ) {
+			// The other purges above can overwrite $error, so report the Cloudflare one.
+			$error = $cloudflare_error;
+
+			return false;
 		}
 
 		$this->purge_all_already_done = true;
@@ -570,10 +592,13 @@ class Cache_Controller implements Module_Interface {
 
 		$count_urls = count( $urls );
 
-		$cloudflare = new Cloudflare_Integration();
+		$cloudflare        = new Cloudflare_Integration();
+		$cloudflare_purged = true;
+
+		// A failed Cloudflare purge must not leave the other caches stale: purge them anyway and report the failure.
 		if ( $cloudflare->is_enabled() && ! $cloudflare->purge_cache_urls( $urls, $error ) ) {
 			Logger::log( 'cache_controller::purge_urls', "Unable to purge some URLs from Cloudflare due to error: {$error}" );
-			return false;
+			$cloudflare_purged = false;
 		}
 
 		if ( $settings->get( Constants::SETTING_VARNISH_SUPPORT, 0 ) > 0 && $settings->get( Constants::SETTING_VARNISH_AUTO_PURGE, 0 ) > 0 ) {
@@ -584,7 +609,8 @@ class Cache_Controller implements Module_Interface {
 			Loader::get()->fallback_cache()->fallback_cache_purge_urls( $urls );
 		}
 
-		if ( $settings->get( Constants::SETTING_PURGE_ONLY_HTML, 0 ) > 0 ) {
+		// Keep the page list entries of a failed Cloudflare purge, so the next purge retries them.
+		if ( $cloudflare_purged && $settings->get( Constants::SETTING_PURGE_ONLY_HTML, 0 ) > 0 ) {
 			Loader::get()->html_cache()->delete_cached_urls_by_urls_list( $urls );
 		}
 
@@ -640,7 +666,7 @@ class Cache_Controller implements Module_Interface {
 			Speculative_Loading::bump_prefetch_timestamp();
 		}
 
-		return true;
+		return $cloudflare_purged;
 	}
 
 	/**
@@ -695,7 +721,7 @@ class Cache_Controller implements Module_Interface {
 			return;
 		}
 
-		if ( ! isset( $_GET['swcfpc-sec-key'] ) || $_GET['swcfpc-sec-key'] !== $settings->get( Constants::SETTING_PURGE_URL_SECRET_KEY, wp_generate_password( 20, false, false ) ) ) {
+		if ( ! isset( $_GET['swcfpc-sec-key'] ) || $_GET['swcfpc-sec-key'] !== $settings->get( Constants::SETTING_PURGE_URL_SECRET_KEY ) ) {
 			return;
 		}
 
@@ -719,7 +745,7 @@ class Cache_Controller implements Module_Interface {
 			return;
 		}
 
-		if ( $_GET['swcfpc-sec-key'] !== $settings->get( Constants::SETTING_PRELOAD_CRONJOB_SECRET, wp_generate_password( 20, false, false ) ) ) {
+		if ( $_GET['swcfpc-sec-key'] !== $settings->get( Constants::SETTING_PRELOAD_CRONJOB_SECRET ) ) {
 			return;
 		}
 

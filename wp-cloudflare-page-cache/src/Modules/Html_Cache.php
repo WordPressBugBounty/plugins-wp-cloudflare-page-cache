@@ -9,6 +9,11 @@ use SPC\Utils\Logger;
 
 class Html_Cache implements Module_Interface {
 	/**
+	 * Cron hook of the follow-up cleanup, see {@see self::delete_unused_cached_urls()}.
+	 */
+	public const CLEANUP_HOOK = 'spc_delete_unused_cached_page_list';
+
+	/**
 	 * @var bool
 	 */
 	private $current_page_can_be_cached = false;
@@ -18,6 +23,8 @@ class Html_Cache implements Module_Interface {
 	 */
 	public function init() {
 		add_action( 'init', [ $this, 'maybe_download_all_cached_urls' ] );
+		add_action( self::CLEANUP_HOOK, [ $this, 'delete_unused_cached_urls' ] );
+		add_action( 'update_option_' . Settings_Store::CONFIG_OPTION, [ $this, 'schedule_cleanup_after_turning_off' ], 10, 2 );
 
 		if ( ! Settings_Store::get_instance()->get( Constants::SETTING_PURGE_ONLY_HTML ) ) {
 			return;
@@ -51,7 +58,18 @@ class Html_Cache implements Module_Interface {
 		$filename     = $cache_path . $cache_key;
 		$file_content = "{$url}|" . time();
 
+		// Writers share the lock; the cleanup takes it alone, see delete_unused_cached_urls().
+		$lock = $this->open_lock_file();
+
+		if ( null !== $lock ) {
+			flock( $lock, LOCK_SH );
+		}
+
 		file_put_contents( $cache_path . $cache_key, $file_content );
+
+		if ( null !== $lock ) {
+			fclose( $lock );
+		}
 
 		return $filename;
 	}
@@ -165,10 +183,32 @@ class Html_Cache implements Module_Interface {
 	}
 
 	/**
+	 * Folder that holds one file per cached HTML page, kept while "Purge HTML pages only" is on.
+	 *
+	 * @return string
+	 */
+	private function get_directory(): string {
+		return Helpers::get_plugin_content_dir() . '/cached_html_pages/';
+	}
+
+	/**
+	 * Get the cached page files. Does not create the folder.
+	 *
+	 * @return list<string>
+	 */
+	private function get_cached_url_files(): array {
+		$files = glob( $this->get_directory() . '*.tmp' );
+
+		return is_array( $files ) ? $files : [];
+	}
+
+	/**
+	 * Create the folder for the cached page files when it is missing.
+	 *
 	 * @return string
 	 */
 	private function init_directory() {
-		$cache_path = Helpers::get_plugin_content_dir() . '/cached_html_pages/';
+		$cache_path = $this->get_directory();
 
 		if ( ! file_exists( $cache_path ) ) {
 			wp_mkdir_p( $cache_path );
@@ -185,14 +225,7 @@ class Html_Cache implements Module_Interface {
 	 * @return void
 	 */
 	public function delete_all_cached_urls() {
-
-		$cache_path = $this->init_directory();
-
-		// Get a list of all of the file names in the folder.
-		$files = glob( $cache_path . '/*.tmp' );
-
-		foreach ( $files as $single_file ) {
-
+		foreach ( $this->get_cached_url_files() as $single_file ) {
 			if ( is_file( $single_file ) ) {
 				@unlink( $single_file );
 			}
@@ -200,27 +233,117 @@ class Html_Cache implements Module_Interface {
 	}
 
 	/**
+	 * Remove the page list while "Purge HTML pages only" is off.
+	 *
+	 * A request that started while the option was on still writes its page at shutdown, which can be
+	 * after the settings were saved. So the same cleanup runs again ten minutes after the save that
+	 * turns the option off, and after every run that found files. It stops once a run finds no file.
+	 *
+	 * The option is read when the request starts. A page written after that can come from a request
+	 * that saw the option turned back on, so only older pages are removed; the next run checks the rest.
+	 * When the lock can be taken, the check and the delete run under the page list lock, so no page is
+	 * rewritten in between. Without file lock support they run unlocked. When a page is being written,
+	 * this run does not wait: it leaves the files to the next run.
+	 *
+	 * @return void
+	 */
+	public function delete_unused_cached_urls(): void {
+		if ( Settings_Store::get_instance()->get( Constants::SETTING_PURGE_ONLY_HTML ) ) {
+			return;
+		}
+
+		$files = $this->get_cached_url_files();
+
+		if ( $files === [] ) {
+			return;
+		}
+
+		$lock        = $this->open_lock_file();
+		$would_block = 0;
+
+		// Without file lock support, flock() fails without $would_block: go on unlocked.
+		if ( null !== $lock && ! flock( $lock, LOCK_EX | LOCK_NB, $would_block ) && $would_block ) {
+			fclose( $lock );
+			$this->schedule_cleanup();
+
+			return;
+		}
+
+		$request_start = isset( $_SERVER['REQUEST_TIME'] ) ? absint( $_SERVER['REQUEST_TIME'] ) : time();
+
+		foreach ( $files as $single_file ) {
+			clearstatcache( true, $single_file );
+			$modified = @filemtime( $single_file );
+
+			if ( false !== $modified && $modified < $request_start ) {
+				@unlink( $single_file );
+			}
+		}
+
+		if ( null !== $lock ) {
+			fclose( $lock );
+		}
+
+		$this->schedule_cleanup();
+	}
+
+	/**
+	 * Open the lock file of the page list. The page writer locks it shared, the cleanup exclusive.
+	 * It is opened for reading and writing: NFSv4 rejects a shared lock on a write-only handle.
+	 *
+	 * @return resource|null The open file, or null when it cannot be opened.
+	 */
+	private function open_lock_file() {
+		$handle = @fopen( $this->get_directory() . '.lock', 'c+' );
+
+		return false === $handle ? null : $handle;
+	}
+
+	/**
+	 * Schedule the follow-up cleanup when a settings save turns "Purge HTML pages only" off, also
+	 * when the page list is empty at that moment.
+	 *
+	 * @param mixed $old_value Stored settings before the save.
+	 * @param mixed $value     Stored settings after the save.
+	 *
+	 * @return void
+	 */
+	public function schedule_cleanup_after_turning_off( $old_value, $value ): void {
+		$key = Constants::SETTING_PURGE_ONLY_HTML;
+
+		if ( empty( $old_value[ $key ] ) || ! empty( $value[ $key ] ) ) {
+			return;
+		}
+
+		// Restart the wait: a cleanup left from an earlier save can be due before the running requests finish.
+		wp_clear_scheduled_hook( self::CLEANUP_HOOK );
+		$this->schedule_cleanup();
+	}
+
+	/**
+	 * Run {@see self::delete_unused_cached_urls()} again in ten minutes, unless it is already scheduled.
+	 *
+	 * @return void
+	 */
+	private function schedule_cleanup(): void {
+		if ( ! wp_next_scheduled( self::CLEANUP_HOOK ) ) {
+			wp_schedule_single_event( time() + 10 * MINUTE_IN_SECONDS, self::CLEANUP_HOOK );
+		}
+	}
+
+	/**
 	 * @return int
 	 */
 	public function count_cached_urls() {
-		$files = glob( $this->init_directory() . '/*.tmp' );
-
-		return is_array( $files ) ? count( $files ) : 0;
+		return count( $this->get_cached_url_files() );
 	}
 
 	/**
 	 * @return array<int, array{url: string, timestamp: string}>
 	 */
 	public function get_cached_urls() {
-		$cache_path = $this->init_directory();
-		$urls       = [];
-
-		// Get a list of all of the file names in the folder.
-		$files = glob( $cache_path . '/*.tmp' );
-
-		if ( ! is_array( $files ) ) {
-			return [];
-		}
+		$urls  = [];
+		$files = $this->get_cached_url_files();
 
 		// keep only 1000 files
 		$files = array_slice( $files, 0, 1000 );

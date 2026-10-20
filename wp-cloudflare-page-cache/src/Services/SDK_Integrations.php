@@ -85,7 +85,8 @@ class SDK_Integrations {
 		} else {
 			// translators: %s is the discount percentage.
 			$config['plugin_meta_message'] = sprintf( __( 'Black Friday Sale - %s off', 'wp-cloudflare-page-cache' ), '60%' );
-			$config['title']               = __( 'Visualizer Pro: 60% off this week', 'wp-cloudflare-page-cache' );
+			// translators: %s - discount.
+			$config['title'] = sprintf( __( 'SPC Pro: %s off this week', 'wp-cloudflare-page-cache' ), '60%' );
 			// translators: %s is the discount percentage.
 			$config['upgrade_menu_text'] = sprintf( __( 'BF Sale - %s off', 'wp-cloudflare-page-cache' ), '60%' );
 		}
